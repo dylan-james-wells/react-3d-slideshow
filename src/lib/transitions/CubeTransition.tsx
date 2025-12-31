@@ -158,6 +158,9 @@ export function CubeTransition({
     const step = stepRef.current
     const isEvenStep = step % 2 === 0
 
+    console.log('step', step);
+    console.log('currentIndex', currentIndex);
+
     // Reset pivot position and rotation
     pivotRef.current.position.set(0, 0, 0)
     pivotRef.current.rotation.set(0, 0, 0)
@@ -177,7 +180,7 @@ export function CubeTransition({
         currentPlaneRef.current.position.set(halfSize, 0, halfSize)
 
         // Next plane is perpendicular, extending back from the pivot
-        nextPlaneRef.current.position.set(0, 0, 0)
+        nextPlaneRef.current.position.set(halfSize * 2, 0, 0)
         nextPlaneRef.current.rotation.set(0, Math.PI / 2, 0)
 
         state.rotationAxis.set(0, 1, 0)
