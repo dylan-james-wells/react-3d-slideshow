@@ -38,8 +38,6 @@ export function CubeTransition({
     rushMode: false, // When true, animate faster to catch up
   })
 
-  // Track step: even = horizontal rotation, odd = vertical rotation
-  const stepRef = useRef(0)
   const prevIndexRef = useRef(currentIndex)
   const lastDirectionRef = useRef(direction)
   const pendingIndexRef = useRef<number | null>(null) // Queue for next slide if animation is running
@@ -144,7 +142,6 @@ export function CubeTransition({
     pivotRef.current.rotation.set(0, 0, 0)
 
     prevIndexRef.current = initialSlideRef.current
-    stepRef.current = 0
     initializedRef.current = true
   }, [isReady, halfSize, setPlaneTexture])
 
@@ -154,61 +151,49 @@ export function CubeTransition({
 
     const state = animStateRef.current
     const isForward = dir === 'next'
-    const step = stepRef.current
-    const isEvenStep = step % 2 === 0
+
+    // Determine rotation type based on the TARGET slide index
+    // Even indices (0, 2, 4...) use horizontal rotation to arrive
+    // Odd indices (1, 3, 5...) use vertical rotation to arrive
+    const targetIsEven = targetIndex % 2 === 0
 
     // Pivot stays at origin (center of theoretical cube)
     pivotRef.current.position.set(0, 0, 0)
     pivotRef.current.rotation.set(0, 0, 0)
 
-    // Position planes as two faces of a cube centered at origin
+    // Current plane always starts at front
+    currentPlaneRef.current.position.set(0, 0, halfSize)
+    currentPlaneRef.current.rotation.set(0, 0, 0)
+
+    // Position next plane based on rotation type and direction
     if (isForward) {
-      if (isEvenStep) {
-        // Rotate right around Y axis
-        currentPlaneRef.current.position.set(0, 0, halfSize)
-        currentPlaneRef.current.rotation.set(0, 0, 0)
-
-        nextPlaneRef.current.position.set(halfSize, 0, 0)
-        nextPlaneRef.current.rotation.set(0, Math.PI / 2, 0)
-
-        state.rotationAxis.set(0, 1, 0)
-        state.rotationAngle = -Math.PI / 2
-      } else {
-        // Rotate down around X axis
-        currentPlaneRef.current.position.set(0, 0, halfSize)
-        currentPlaneRef.current.rotation.set(0, 0, 0)
-
+      if (targetIsEven) {
+        // Going to even slide: rotate down (vertical)
         nextPlaneRef.current.position.set(0, halfSize, 0)
         nextPlaneRef.current.rotation.set(-Math.PI / 2, 0, 0)
-
         state.rotationAxis.set(1, 0, 0)
         state.rotationAngle = Math.PI / 2
+      } else {
+        // Going to odd slide: rotate right (horizontal)
+        nextPlaneRef.current.position.set(halfSize, 0, 0)
+        nextPlaneRef.current.rotation.set(0, Math.PI / 2, 0)
+        state.rotationAxis.set(0, 1, 0)
+        state.rotationAngle = -Math.PI / 2
       }
-      stepRef.current++
     } else {
-      // Backward
-      if (step > 0) {
-        const prevStepWasEven = (step - 1) % 2 === 0
-        if (prevStepWasEven) {
-          currentPlaneRef.current.position.set(0, 0, halfSize)
-          currentPlaneRef.current.rotation.set(0, 0, 0)
-
-          nextPlaneRef.current.position.set(-halfSize, 0, 0)
-          nextPlaneRef.current.rotation.set(0, -Math.PI / 2, 0)
-
-          state.rotationAxis.set(0, 1, 0)
-          state.rotationAngle = Math.PI / 2
-        } else {
-          currentPlaneRef.current.position.set(0, 0, halfSize)
-          currentPlaneRef.current.rotation.set(0, 0, 0)
-
-          nextPlaneRef.current.position.set(0, -halfSize, 0)
-          nextPlaneRef.current.rotation.set(Math.PI / 2, 0, 0)
-
-          state.rotationAxis.set(1, 0, 0)
-          state.rotationAngle = -Math.PI / 2
-        }
-        stepRef.current--
+      // Backward - reverse the rotation that got us to the current slide
+      if (targetIsEven) {
+        // Going back to even slide: rotate up (reverse of down)
+        nextPlaneRef.current.position.set(0, -halfSize, 0)
+        nextPlaneRef.current.rotation.set(Math.PI / 2, 0, 0)
+        state.rotationAxis.set(1, 0, 0)
+        state.rotationAngle = -Math.PI / 2
+      } else {
+        // Going back to odd slide: rotate left (reverse of right)
+        nextPlaneRef.current.position.set(-halfSize, 0, 0)
+        nextPlaneRef.current.rotation.set(0, -Math.PI / 2, 0)
+        state.rotationAxis.set(0, 1, 0)
+        state.rotationAngle = Math.PI / 2
       }
     }
 
