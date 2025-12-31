@@ -21,24 +21,28 @@ export function CubeTransition({
   direction,
 }: CubeTransitionProps) {
   const { viewport } = useThree()
-  const groupRef = useRef<THREE.Group>(null)
+  const pivotRef = useRef<THREE.Group>(null)
   const [isReady, setIsReady] = useState(false)
   const canvasesRef = useRef<HTMLCanvasElement[]>([])
 
-  // We use 2 planes: current (front-facing) and next (positioned for rotation)
+  // Two planes that form an "L" shape, rotating around their shared edge
   const currentPlaneRef = useRef<THREE.Mesh>(null)
   const nextPlaneRef = useRef<THREE.Mesh>(null)
 
   const animStateRef = useRef({
     isAnimating: false,
     progress: 0,
-    rotationAxis: 'y' as 'x' | 'y',
-    rotationDirection: 1, // 1 or -1
+    rotationAxis: new THREE.Vector3(0, 1, 0),
+    rotationAngle: Math.PI / 2, // Always 90 degrees, sign determines direction
   })
 
   // Track step: even = horizontal rotation, odd = vertical rotation
   const stepRef = useRef(0)
   const prevIndexRef = useRef(currentIndex)
+  const lastDirectionRef = useRef(direction)
+
+  const cubeSize = Math.min(viewport.width * 0.6, viewport.height * 0.6)
+  const halfSize = cubeSize / 2
 
   // Load all images
   useEffect(() => {
@@ -118,50 +122,79 @@ export function CubeTransition({
     material.needsUpdate = true
   }, [createTexture])
 
-  const cubeSize = Math.min(viewport.width * 0.6, viewport.height * 0.6)
-  const halfSize = cubeSize / 2
+  // Track initialization
+  const initializedRef = useRef(false)
+  const initialSlideRef = useRef(currentIndex)
 
-  // Initialize - set up first slide
+  // Initialize - set up first slide (only once)
   useEffect(() => {
-    if (!isReady || !currentPlaneRef.current) return
+    if (!isReady || !currentPlaneRef.current || !pivotRef.current) return
+    if (initializedRef.current) return
 
-    setPlaneTexture(currentPlaneRef.current, currentIndex)
-    prevIndexRef.current = currentIndex
+    // Current plane at front, centered
+    currentPlaneRef.current.position.set(0, 0, halfSize)
+    currentPlaneRef.current.rotation.set(0, 0, 0)
+    setPlaneTexture(currentPlaneRef.current, initialSlideRef.current)
+
+    // Reset pivot
+    pivotRef.current.position.set(0, 0, 0)
+    pivotRef.current.rotation.set(0, 0, 0)
+
+    prevIndexRef.current = initialSlideRef.current
     stepRef.current = 0
-  }, [isReady, setPlaneTexture]) // Note: currentIndex intentionally not in deps for init
+    initializedRef.current = true
+  }, [isReady, halfSize, setPlaneTexture])
 
   // Handle slide changes
   useEffect(() => {
     if (currentIndex === prevIndexRef.current || !isReady) return
-    if (!currentPlaneRef.current || !nextPlaneRef.current || !groupRef.current) return
+    if (!initializedRef.current) return
+    if (!currentPlaneRef.current || !nextPlaneRef.current || !pivotRef.current) return
 
     const state = animStateRef.current
+    if (state.isAnimating) return // Don't start new animation while one is running
+
     const isForward = direction === 'next'
     const step = stepRef.current
     const isEvenStep = step % 2 === 0
 
-    // Reset group rotation
-    groupRef.current.rotation.set(0, 0, 0)
+    // Reset pivot position and rotation
+    pivotRef.current.position.set(0, 0, 0)
+    pivotRef.current.rotation.set(0, 0, 0)
 
-    // Current plane stays at front, facing camera
+    // Current plane: front-facing at z = halfSize
     currentPlaneRef.current.position.set(0, 0, halfSize)
     currentPlaneRef.current.rotation.set(0, 0, 0)
 
-    // Set up next plane position based on rotation direction
-    // The next plane is positioned at 90° from current, ready to rotate into view
+    // Position next plane and set rotation axis based on direction
     if (isForward) {
       if (isEvenStep) {
-        // Rotate right: next plane is on the left side
-        nextPlaneRef.current.position.set(-halfSize, 0, 0)
+        // Rotate right: pivot is on the left edge, next plane is perpendicular on left
+        // Pivot at left edge of current plane
+        pivotRef.current.position.set(-halfSize, 0, 0)
+
+        // Current plane relative to pivot (pivot is at its left edge)
+        currentPlaneRef.current.position.set(halfSize, 0, halfSize)
+
+        // Next plane is perpendicular, extending back from the pivot
+        nextPlaneRef.current.position.set(0, 0, 0)
         nextPlaneRef.current.rotation.set(0, Math.PI / 2, 0)
-        state.rotationAxis = 'y'
-        state.rotationDirection = -1 // Y decreases (rotate right)
+
+        state.rotationAxis.set(0, 1, 0)
+        state.rotationAngle = -Math.PI / 2
       } else {
-        // Rotate down: next plane is on top
-        nextPlaneRef.current.position.set(0, halfSize, 0)
+        // Rotate down: pivot is on the top edge
+        pivotRef.current.position.set(0, halfSize, 0)
+
+        // Current plane relative to pivot
+        currentPlaneRef.current.position.set(0, -halfSize, halfSize)
+
+        // Next plane perpendicular on top
+        nextPlaneRef.current.position.set(0, 0, 0)
         nextPlaneRef.current.rotation.set(-Math.PI / 2, 0, 0)
-        state.rotationAxis = 'x'
-        state.rotationDirection = 1 // X increases (rotate down)
+
+        state.rotationAxis.set(1, 0, 0)
+        state.rotationAngle = Math.PI / 2
       }
       stepRef.current++
     } else {
@@ -169,28 +202,38 @@ export function CubeTransition({
       if (step > 0) {
         const prevStepWasEven = (step - 1) % 2 === 0
         if (prevStepWasEven) {
-          // Undo right: next plane is on the right side
-          nextPlaneRef.current.position.set(halfSize, 0, 0)
+          // Undo right (go left): pivot on right edge
+          pivotRef.current.position.set(halfSize, 0, 0)
+
+          currentPlaneRef.current.position.set(-halfSize, 0, halfSize)
+
+          nextPlaneRef.current.position.set(0, 0, 0)
           nextPlaneRef.current.rotation.set(0, -Math.PI / 2, 0)
-          state.rotationAxis = 'y'
-          state.rotationDirection = 1 // Y increases (rotate left)
+
+          state.rotationAxis.set(0, 1, 0)
+          state.rotationAngle = Math.PI / 2
         } else {
-          // Undo down: next plane is on bottom
-          nextPlaneRef.current.position.set(0, -halfSize, 0)
+          // Undo down (go up): pivot on bottom edge
+          pivotRef.current.position.set(0, -halfSize, 0)
+
+          currentPlaneRef.current.position.set(0, halfSize, halfSize)
+
+          nextPlaneRef.current.position.set(0, 0, 0)
           nextPlaneRef.current.rotation.set(Math.PI / 2, 0, 0)
-          state.rotationAxis = 'x'
-          state.rotationDirection = -1 // X decreases (rotate up)
+
+          state.rotationAxis.set(1, 0, 0)
+          state.rotationAngle = -Math.PI / 2
         }
         stepRef.current--
       }
     }
 
-    // Set textures
+    // Set textures - current shows outgoing slide, next shows incoming slide
     setPlaneTexture(currentPlaneRef.current, prevIndexRef.current)
     setPlaneTexture(nextPlaneRef.current, currentIndex)
 
-    // Make next plane visible
     nextPlaneRef.current.visible = true
+    lastDirectionRef.current = direction
 
     state.isAnimating = true
     state.progress = 0
@@ -199,7 +242,7 @@ export function CubeTransition({
 
   // Animation
   useFrame((_, delta) => {
-    if (!groupRef.current || !currentPlaneRef.current || !nextPlaneRef.current) return
+    if (!pivotRef.current || !currentPlaneRef.current || !nextPlaneRef.current) return
     const state = animStateRef.current
 
     if (state.isAnimating) {
@@ -207,24 +250,25 @@ export function CubeTransition({
       state.progress = Math.min(state.progress + delta * speed, 1)
       const t = easeInOutCubic(state.progress)
 
-      // Rotate the group
-      const angle = (Math.PI / 2) * t * state.rotationDirection
-      if (state.rotationAxis === 'y') {
-        groupRef.current.rotation.y = angle
+      // Rotate the pivot group
+      const angle = state.rotationAngle * t
+      if (state.rotationAxis.x === 1) {
+        pivotRef.current.rotation.set(angle, 0, 0)
       } else {
-        groupRef.current.rotation.x = angle
+        pivotRef.current.rotation.set(0, angle, 0)
       }
 
       if (state.progress >= 1) {
         state.isAnimating = false
 
-        // Animation complete - reset for next transition
-        groupRef.current.rotation.set(0, 0, 0)
+        // Reset everything for next transition
+        pivotRef.current.position.set(0, 0, 0)
+        pivotRef.current.rotation.set(0, 0, 0)
 
-        // Swap: current plane now shows the new slide, positioned at front
-        setPlaneTexture(currentPlaneRef.current, currentIndex)
+        // Current plane shows new slide at front
         currentPlaneRef.current.position.set(0, 0, halfSize)
         currentPlaneRef.current.rotation.set(0, 0, 0)
+        setPlaneTexture(currentPlaneRef.current, currentIndex)
 
         // Hide next plane
         nextPlaneRef.current.visible = false
@@ -244,14 +288,14 @@ export function CubeTransition({
   return (
     <>
       <ambientLight intensity={1} />
-      <group ref={groupRef}>
-        {/* Current slide - front facing */}
-        <mesh ref={currentPlaneRef} position={[0, 0, halfSize]}>
+      <group ref={pivotRef}>
+        {/* Current slide */}
+        <mesh ref={currentPlaneRef}>
           <planeGeometry args={[cubeSize, cubeSize]} />
           <meshBasicMaterial side={THREE.FrontSide} />
         </mesh>
 
-        {/* Next slide - positioned based on rotation direction */}
+        {/* Next slide */}
         <mesh ref={nextPlaneRef} visible={false}>
           <planeGeometry args={[cubeSize, cubeSize]} />
           <meshBasicMaterial side={THREE.FrontSide} />
