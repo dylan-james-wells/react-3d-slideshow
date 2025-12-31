@@ -24,8 +24,39 @@ const fragmentShader = `
   uniform sampler2D uNextTexture;
   uniform float uProgress;
   uniform float uAberrationAmount;
+  uniform float uTime;
+  uniform float uOverlayIntensity;
+  uniform vec2 uLayer1Offset;
+  uniform vec2 uLayer2Offset;
+  uniform float uHueShift1;
+  uniform float uHueShift2;
 
   varying vec2 vUv;
+
+  // Hue rotation function
+  vec3 hueRotate(vec3 color, float hue) {
+    float angle = hue * 6.28318530718; // Convert to radians (0-1 maps to 0-2PI)
+    float s = sin(angle);
+    float c = cos(angle);
+    vec3 weights = (vec3(2.0 * c, -sqrt(3.0) * s - c, sqrt(3.0) * s - c) + 1.0) / 3.0;
+    vec3 result = vec3(
+      dot(color, weights.xyz),
+      dot(color, weights.zxy),
+      dot(color, weights.yzx)
+    );
+    return result;
+  }
+
+  // Hard-light blend mode: combines multiply and screen
+  // If overlay < 0.5: 2 * base * overlay
+  // If overlay >= 0.5: 1 - 2 * (1 - base) * (1 - overlay)
+  vec3 hardLight(vec3 base, vec3 overlay) {
+    vec3 result;
+    result.r = overlay.r < 0.5 ? 2.0 * base.r * overlay.r : 1.0 - 2.0 * (1.0 - base.r) * (1.0 - overlay.r);
+    result.g = overlay.g < 0.5 ? 2.0 * base.g * overlay.g : 1.0 - 2.0 * (1.0 - base.g) * (1.0 - overlay.g);
+    result.b = overlay.b < 0.5 ? 2.0 * base.b * overlay.b : 1.0 - 2.0 * (1.0 - base.b) * (1.0 - overlay.b);
+    return result;
+  }
 
   void main() {
     vec2 uv = vUv;
@@ -47,10 +78,48 @@ const fragmentShader = `
     float nextB = texture2D(uNextTexture, uv - aberrationOffset).b;
     vec3 nextColor = vec3(nextR, nextG, nextB);
 
-    // Crossfade between textures
-    vec3 color = mix(currentColor, nextColor, uProgress);
+    // Crossfade between textures (base layer)
+    vec3 baseColor = mix(currentColor, nextColor, uProgress);
 
-    gl_FragColor = vec4(color, 1.0);
+    // === Overlay Layers with heavy aberration and hue rotation ===
+    // These create the stretched, ghostly duplicate effect
+
+    float heavyAberration = uAberrationAmount * 5.0; // Much stronger aberration for overlays
+
+    // Layer 1 - offset and heavily aberrated
+    vec2 layer1Uv = uv + uLayer1Offset;
+    vec2 layer1Center = layer1Uv - 0.5;
+    float layer1Dist = length(layer1Center);
+    vec2 layer1AberrationOffset = layer1Center * layer1Dist * heavyAberration;
+
+    float layer1R = texture2D(uCurrentTexture, layer1Uv + layer1AberrationOffset).r;
+    float layer1G = texture2D(uCurrentTexture, layer1Uv).g;
+    float layer1B = texture2D(uCurrentTexture, layer1Uv - layer1AberrationOffset).b;
+    vec3 layer1Color = vec3(layer1R, layer1G, layer1B);
+    layer1Color = hueRotate(layer1Color, uHueShift1);
+
+    // Layer 2 - different offset and aberration
+    vec2 layer2Uv = uv + uLayer2Offset;
+    vec2 layer2Center = layer2Uv - 0.5;
+    float layer2Dist = length(layer2Center);
+    vec2 layer2AberrationOffset = layer2Center * layer2Dist * heavyAberration;
+
+    float layer2R = texture2D(uNextTexture, layer2Uv + layer2AberrationOffset).r;
+    float layer2G = texture2D(uNextTexture, layer2Uv).g;
+    float layer2B = texture2D(uNextTexture, layer2Uv - layer2AberrationOffset).b;
+    vec3 layer2Color = vec3(layer2R, layer2G, layer2B);
+    layer2Color = hueRotate(layer2Color, uHueShift2);
+
+    // Apply hard-light blend mode for overlay layers
+    vec3 hardLight1 = hardLight(baseColor, layer1Color);
+    vec3 hardLight2 = hardLight(baseColor, layer2Color);
+
+    // Mix in the hard-light blended overlays based on intensity
+    vec3 finalColor = baseColor;
+    finalColor = mix(finalColor, hardLight1, uOverlayIntensity * 0.5);
+    finalColor = mix(finalColor, hardLight2, uOverlayIntensity * 0.5);
+
+    gl_FragColor = vec4(finalColor, 1.0);
   }
 `
 
@@ -124,6 +193,12 @@ export function GlitchTransition({
         uNextTexture: { value: null },
         uProgress: { value: 0 },
         uAberrationAmount: { value: 0 },
+        uTime: { value: 0 },
+        uOverlayIntensity: { value: 0 },
+        uLayer1Offset: { value: new THREE.Vector2(0, 0) },
+        uLayer2Offset: { value: new THREE.Vector2(0, 0) },
+        uHueShift1: { value: 0 },
+        uHueShift2: { value: 0 },
       },
     })
   }, [])
@@ -153,6 +228,31 @@ export function GlitchTransition({
     prevIndexRef.current = currentIndex
   }, [currentIndex, isReady, textures, shaderMaterial])
 
+  // Track time and glitch state for erratic movement
+  const timeRef = useRef(0)
+  const glitchStateRef = useRef({
+    // Layer 1 state
+    layer1TargetX: 0,
+    layer1TargetY: 0,
+    layer1CurrentX: 0,
+    layer1CurrentY: 0,
+    layer1NextGlitch: 0,
+    layer1GlitchSpeed: 0.1,
+    // Layer 2 state
+    layer2TargetX: 0,
+    layer2TargetY: 0,
+    layer2CurrentX: 0,
+    layer2CurrentY: 0,
+    layer2NextGlitch: 0,
+    layer2GlitchSpeed: 0.1,
+    // Hue state
+    hue1Target: 0,
+    hue1Current: 0,
+    hue2Target: 0,
+    hue2Current: 0,
+    hueNextGlitch: 0,
+  })
+
   // Animation loop
   useFrame((_, delta) => {
     if (!materialRef.current) return
@@ -160,14 +260,58 @@ export function GlitchTransition({
     if (isAnimatingRef.current) {
       const speed = (1 / transitionDuration) * 1000
       progressRef.current = Math.min(progressRef.current + delta * speed, 1)
+      timeRef.current += delta
 
       const progress = progressRef.current
+      const time = timeRef.current
+      const glitch = glitchStateRef.current
       shaderMaterial.uniforms.uProgress.value = progress
+      shaderMaterial.uniforms.uTime.value = time
 
       // Aberration ramps up to middle, then ramps down
-      // Peak at progress = 0.5, using a sine curve for smooth ramp
       const aberration = Math.sin(progress * Math.PI) * 0.15
       shaderMaterial.uniforms.uAberrationAmount.value = aberration
+
+      // Overlay intensity follows same ramp as aberration
+      const overlayIntensity = Math.sin(progress * Math.PI)
+      shaderMaterial.uniforms.uOverlayIntensity.value = overlayIntensity
+
+      // === Jerky glitch movement for layer 1 ===
+      if (time >= glitch.layer1NextGlitch) {
+        // Jump to new random target
+        glitch.layer1TargetX = (Math.random() - 0.5) * 0.1
+        glitch.layer1TargetY = (Math.random() - 0.5) * 0.08
+        // Random speed: sometimes very fast, sometimes slow
+        glitch.layer1GlitchSpeed = Math.random() < 0.3 ? 0.5 + Math.random() * 0.5 : 0.05 + Math.random() * 0.15
+        // Random interval until next glitch (fast bursts vs slow periods)
+        glitch.layer1NextGlitch = time + (Math.random() < 0.4 ? 0.02 + Math.random() * 0.05 : 0.1 + Math.random() * 0.2)
+      }
+      // Lerp toward target with variable speed
+      glitch.layer1CurrentX += (glitch.layer1TargetX - glitch.layer1CurrentX) * glitch.layer1GlitchSpeed
+      glitch.layer1CurrentY += (glitch.layer1TargetY - glitch.layer1CurrentY) * glitch.layer1GlitchSpeed
+      shaderMaterial.uniforms.uLayer1Offset.value.set(glitch.layer1CurrentX, glitch.layer1CurrentY)
+
+      // === Jerky glitch movement for layer 2 ===
+      if (time >= glitch.layer2NextGlitch) {
+        glitch.layer2TargetX = (Math.random() - 0.5) * 0.1
+        glitch.layer2TargetY = (Math.random() - 0.5) * 0.08
+        glitch.layer2GlitchSpeed = Math.random() < 0.3 ? 0.5 + Math.random() * 0.5 : 0.05 + Math.random() * 0.15
+        glitch.layer2NextGlitch = time + (Math.random() < 0.4 ? 0.02 + Math.random() * 0.05 : 0.1 + Math.random() * 0.2)
+      }
+      glitch.layer2CurrentX += (glitch.layer2TargetX - glitch.layer2CurrentX) * glitch.layer2GlitchSpeed
+      glitch.layer2CurrentY += (glitch.layer2TargetY - glitch.layer2CurrentY) * glitch.layer2GlitchSpeed
+      shaderMaterial.uniforms.uLayer2Offset.value.set(glitch.layer2CurrentX, glitch.layer2CurrentY)
+
+      // === Jerky hue rotation ===
+      if (time >= glitch.hueNextGlitch) {
+        glitch.hue1Target = Math.random()
+        glitch.hue2Target = Math.random()
+        glitch.hueNextGlitch = time + (Math.random() < 0.5 ? 0.03 + Math.random() * 0.07 : 0.15 + Math.random() * 0.25)
+      }
+      glitch.hue1Current += (glitch.hue1Target - glitch.hue1Current) * 0.15
+      glitch.hue2Current += (glitch.hue2Target - glitch.hue2Current) * 0.15
+      shaderMaterial.uniforms.uHueShift1.value = glitch.hue1Current
+      shaderMaterial.uniforms.uHueShift2.value = glitch.hue2Current
 
       if (progressRef.current >= 1) {
         isAnimatingRef.current = false
@@ -175,6 +319,22 @@ export function GlitchTransition({
         shaderMaterial.uniforms.uCurrentTexture.value = textures[currentIndex]
         shaderMaterial.uniforms.uNextTexture.value = textures[currentIndex]
         shaderMaterial.uniforms.uAberrationAmount.value = 0
+        shaderMaterial.uniforms.uOverlayIntensity.value = 0
+        shaderMaterial.uniforms.uLayer1Offset.value.set(0, 0)
+        shaderMaterial.uniforms.uLayer2Offset.value.set(0, 0)
+        shaderMaterial.uniforms.uHueShift1.value = 0
+        shaderMaterial.uniforms.uHueShift2.value = 0
+        timeRef.current = 0
+        // Reset glitch state
+        glitch.layer1CurrentX = 0
+        glitch.layer1CurrentY = 0
+        glitch.layer2CurrentX = 0
+        glitch.layer2CurrentY = 0
+        glitch.hue1Current = 0
+        glitch.hue2Current = 0
+        glitch.layer1NextGlitch = 0
+        glitch.layer2NextGlitch = 0
+        glitch.hueNextGlitch = 0
       }
     }
   })
