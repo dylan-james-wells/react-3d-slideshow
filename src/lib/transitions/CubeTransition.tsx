@@ -35,12 +35,14 @@ export function CubeTransition({
     rotationAxis: new THREE.Vector3(0, 1, 0),
     rotationAngle: Math.PI / 2, // Always 90 degrees, sign determines direction
     targetSlideIndex: 0, // The slide we're animating to
+    rushMode: false, // When true, animate faster to catch up
   })
 
   // Track step: even = horizontal rotation, odd = vertical rotation
   const stepRef = useRef(0)
   const prevIndexRef = useRef(currentIndex)
   const lastDirectionRef = useRef(direction)
+  const pendingIndexRef = useRef<number | null>(null) // Queue for next slide if animation is running
 
   const cubeSize = Math.min(viewport.width * 0.6, viewport.height * 0.6)
   const halfSize = cubeSize / 2
@@ -146,24 +148,16 @@ export function CubeTransition({
     initializedRef.current = true
   }, [isReady, halfSize, setPlaneTexture])
 
-  // Handle slide changes
-  useEffect(() => {
-    if (currentIndex === prevIndexRef.current || !isReady) return
-    if (!initializedRef.current) return
+  // Helper to start animation for a specific slide transition
+  const startAnimation = useCallback((targetIndex: number, dir: 'next' | 'prev') => {
     if (!currentPlaneRef.current || !nextPlaneRef.current || !pivotRef.current) return
 
     const state = animStateRef.current
-    if (state.isAnimating) return // Don't start new animation while one is running
-
-    const isForward = direction === 'next'
+    const isForward = dir === 'next'
     const step = stepRef.current
     const isEvenStep = step % 2 === 0
 
-    console.log('step', step);
-    console.log('currentIndex', currentIndex);
-
     // Pivot stays at origin (center of theoretical cube)
-    // Both planes are positioned as faces of a cube centered at origin
     pivotRef.current.position.set(0, 0, 0)
     pivotRef.current.rotation.set(0, 0, 0)
 
@@ -171,28 +165,24 @@ export function CubeTransition({
     if (isForward) {
       if (isEvenStep) {
         // Rotate right around Y axis
-        // Current plane: front face at z = +halfSize
         currentPlaneRef.current.position.set(0, 0, halfSize)
         currentPlaneRef.current.rotation.set(0, 0, 0)
 
-        // Next plane: right face at x = +halfSize, facing right (normal pointing +X)
         nextPlaneRef.current.position.set(halfSize, 0, 0)
         nextPlaneRef.current.rotation.set(0, Math.PI / 2, 0)
 
         state.rotationAxis.set(0, 1, 0)
-        state.rotationAngle = -Math.PI / 2 // Rotate cube left so right face comes to front
+        state.rotationAngle = -Math.PI / 2
       } else {
         // Rotate down around X axis
-        // Current plane: front face at z = +halfSize
         currentPlaneRef.current.position.set(0, 0, halfSize)
         currentPlaneRef.current.rotation.set(0, 0, 0)
 
-        // Next plane: bottom face at y = -halfSize, facing down (normal pointing -Y)
         nextPlaneRef.current.position.set(0, halfSize, 0)
         nextPlaneRef.current.rotation.set(-Math.PI / 2, 0, 0)
 
         state.rotationAxis.set(1, 0, 0)
-        state.rotationAngle = Math.PI / 2 // Rotate cube down so bottom face comes to front
+        state.rotationAngle = Math.PI / 2
       }
       stepRef.current++
     } else {
@@ -200,43 +190,57 @@ export function CubeTransition({
       if (step > 0) {
         const prevStepWasEven = (step - 1) % 2 === 0
         if (prevStepWasEven) {
-          // Undo right (go left): next plane on left face
           currentPlaneRef.current.position.set(0, 0, halfSize)
           currentPlaneRef.current.rotation.set(0, 0, 0)
 
-          // Left face at x = -halfSize, facing left
           nextPlaneRef.current.position.set(-halfSize, 0, 0)
           nextPlaneRef.current.rotation.set(0, -Math.PI / 2, 0)
 
           state.rotationAxis.set(0, 1, 0)
-          state.rotationAngle = Math.PI / 2 // Rotate cube right so left face comes to front
+          state.rotationAngle = Math.PI / 2
         } else {
-          // Undo down (go up): next plane on bottom face
           currentPlaneRef.current.position.set(0, 0, halfSize)
           currentPlaneRef.current.rotation.set(0, 0, 0)
 
-          // Bottom face at y = -halfSize, facing down
           nextPlaneRef.current.position.set(0, -halfSize, 0)
           nextPlaneRef.current.rotation.set(Math.PI / 2, 0, 0)
 
           state.rotationAxis.set(1, 0, 0)
-          state.rotationAngle = -Math.PI / 2 // Rotate cube up so bottom face comes to front
+          state.rotationAngle = -Math.PI / 2
         }
         stepRef.current--
       }
     }
 
-    // Set textures - current shows outgoing slide, next shows incoming slide
+    // Set textures
     setPlaneTexture(currentPlaneRef.current, prevIndexRef.current)
-    setPlaneTexture(nextPlaneRef.current, currentIndex)
+    setPlaneTexture(nextPlaneRef.current, targetIndex)
 
     nextPlaneRef.current.visible = true
-    lastDirectionRef.current = direction
+    lastDirectionRef.current = dir
 
     state.isAnimating = true
     state.progress = 0
-    state.targetSlideIndex = currentIndex // Store target for when animation completes
-  }, [currentIndex, isReady, direction, halfSize, setPlaneTexture])
+    state.targetSlideIndex = targetIndex
+  }, [halfSize, setPlaneTexture])
+
+  // Handle slide changes
+  useEffect(() => {
+    if (currentIndex === prevIndexRef.current || !isReady) return
+    if (!initializedRef.current) return
+    if (!currentPlaneRef.current || !nextPlaneRef.current || !pivotRef.current) return
+
+    const state = animStateRef.current
+
+    // If animation is running, queue the new slide and enable rush mode
+    if (state.isAnimating) {
+      pendingIndexRef.current = currentIndex
+      state.rushMode = true
+      return
+    }
+
+    startAnimation(currentIndex, direction)
+  }, [currentIndex, isReady, direction, startAnimation])
 
   // Animation
   useFrame((_, delta) => {
@@ -244,7 +248,9 @@ export function CubeTransition({
     const state = animStateRef.current
 
     if (state.isAnimating) {
-      const speed = (1 / transitionDuration) * 1000
+      // Speed up animation if there are pending slides (rush mode)
+      const rushMultiplier = state.rushMode ? 4 : 1
+      const speed = (1 / transitionDuration) * 1000 * rushMultiplier
       state.progress = Math.min(state.progress + delta * speed, 1)
       const t = easeInOutCubic(state.progress)
 
@@ -258,6 +264,7 @@ export function CubeTransition({
 
       if (state.progress >= 1) {
         state.isAnimating = false
+        state.rushMode = false
 
         // Reset everything for next transition
         pivotRef.current.position.set(0, 0, 0)
@@ -273,6 +280,16 @@ export function CubeTransition({
 
         // Update prevIndexRef now that animation is complete
         prevIndexRef.current = state.targetSlideIndex
+
+        // If there's a pending slide, start animating to it
+        if (pendingIndexRef.current !== null && pendingIndexRef.current !== state.targetSlideIndex) {
+          const pendingIndex = pendingIndexRef.current
+          pendingIndexRef.current = null
+          // Determine direction based on index difference
+          const dir = pendingIndex > state.targetSlideIndex ? 'next' : 'prev'
+          state.rushMode = true // Keep rushing if more pending
+          startAnimation(pendingIndex, dir)
+        }
       }
     }
   })
