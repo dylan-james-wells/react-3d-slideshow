@@ -199,25 +199,27 @@ export function CubeTransition({
       if (step > 0) {
         const prevStepWasEven = (step - 1) % 2 === 0
         if (prevStepWasEven) {
-          // Undo right (go left): current at front, next on left face
+          // Undo right (go left): next plane on left face
           currentPlaneRef.current.position.set(0, 0, halfSize)
           currentPlaneRef.current.rotation.set(0, 0, 0)
 
+          // Left face at x = -halfSize, facing left
           nextPlaneRef.current.position.set(-halfSize, 0, 0)
           nextPlaneRef.current.rotation.set(0, -Math.PI / 2, 0)
 
           state.rotationAxis.set(0, 1, 0)
           state.rotationAngle = Math.PI / 2 // Rotate cube right so left face comes to front
         } else {
-          // Undo down (go up): current at front, next on top face
+          // Undo down (go up): next plane on bottom face
           currentPlaneRef.current.position.set(0, 0, halfSize)
           currentPlaneRef.current.rotation.set(0, 0, 0)
 
-          nextPlaneRef.current.position.set(0, halfSize, 0)
+          // Bottom face at y = -halfSize, facing down
+          nextPlaneRef.current.position.set(0, -halfSize, 0)
           nextPlaneRef.current.rotation.set(Math.PI / 2, 0, 0)
 
           state.rotationAxis.set(1, 0, 0)
-          state.rotationAngle = -Math.PI / 2 // Rotate cube up so top face comes to front
+          state.rotationAngle = -Math.PI / 2 // Rotate cube up so bottom face comes to front
         }
         stepRef.current--
       }
