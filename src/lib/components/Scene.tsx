@@ -1,10 +1,10 @@
 import { Suspense } from 'react'
 import { SlideData, TransitionStyle } from '../types'
 import {
-  CarouselTransition,
   CascadeTransition,
   CubeTransition,
   FlipTransition,
+  GlitchTransition,
   WaveTransition,
   ZoomTransition,
 } from '../transitions'
@@ -46,8 +46,6 @@ export function Scene({
     }
 
     switch (style) {
-      case 'carousel':
-        return <CarouselTransition {...props} />
       case 'cascade':
         return (
           <CascadeTransition
@@ -60,6 +58,8 @@ export function Scene({
         return <CubeTransition {...props} />
       case 'flip':
         return <FlipTransition {...props} />
+      case 'glitch':
+        return <GlitchTransition {...props} />
       case 'wave':
         return <WaveTransition {...props} />
       case 'zoom':

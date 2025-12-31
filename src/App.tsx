@@ -26,9 +26,9 @@ const demoSlides: SlideData[] = [
 
 const transitionStyles: TransitionStyle[] = [
   'cascade',
-  'carousel',
   'cube',
   'flip',
+  'glitch',
   'wave',
   'zoom',
 ]

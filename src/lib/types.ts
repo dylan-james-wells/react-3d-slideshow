@@ -1,10 +1,10 @@
 import { ReactNode } from 'react'
 
 export type TransitionStyle =
-  | 'carousel'
   | 'cascade'
   | 'cube'
   | 'flip'
+  | 'glitch'
   | 'wave'
   | 'zoom'
 
