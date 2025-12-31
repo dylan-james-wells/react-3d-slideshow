@@ -7,7 +7,7 @@ import { Controls } from './Controls'
 import { Indicators } from './Indicators'
 
 const defaultProps: Partial<SlideshowProps> = {
-  style: 'fade',
+  style: 'cascade',
   autoPlay: false,
   autoPlayInterval: 5000,
   showControls: true,
@@ -20,6 +20,8 @@ const defaultProps: Partial<SlideshowProps> = {
   enableSwipe: true,
   enableKeyboard: true,
   pauseOnHover: true,
+  cascadeSubdivisions: 20,
+  aspectRatio: 3 / 2,
 }
 
 export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
@@ -41,6 +43,8 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       enableSwipe = defaultProps.enableSwipe,
       enableKeyboard = defaultProps.enableKeyboard,
       pauseOnHover = defaultProps.pauseOnHover,
+      cascadeSubdivisions = defaultProps.cascadeSubdivisions,
+      aspectRatio = defaultProps.aspectRatio,
     } = props
 
     const {
@@ -133,6 +137,8 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             transitionDuration={transitionDuration}
             style={style}
             direction={direction}
+            cascadeSubdivisions={cascadeSubdivisions}
+            aspectRatio={aspectRatio}
           />
         </Canvas>
 

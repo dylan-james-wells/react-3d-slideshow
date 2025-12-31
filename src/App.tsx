@@ -25,7 +25,7 @@ const demoSlides: SlideData[] = [
 ]
 
 const transitionStyles: TransitionStyle[] = [
-  'fade',
+  'cascade',
   'carousel',
   'cube',
   'flip',
@@ -85,6 +85,16 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff',
     fontSize: 14,
     cursor: 'pointer',
+    outline: 'none',
+  },
+  input: {
+    padding: '8px 12px',
+    borderRadius: 8,
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    background: 'rgba(255, 255, 255, 0.1)',
+    color: '#fff',
+    fontSize: 14,
+    width: 80,
     outline: 'none',
   },
   button: {
@@ -162,14 +172,21 @@ const styles: Record<string, React.CSSProperties> = {
 }
 
 function App() {
-  const [selectedStyle, setSelectedStyle] = useState<TransitionStyle>('fade')
+  const [selectedStyle, setSelectedStyle] = useState<TransitionStyle>('cascade')
   const [autoPlay, setAutoPlay] = useState(false)
   const [loop, setLoop] = useState(true)
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [cascadeSubdivisions, setCascadeSubdivisions] = useState(20)
+  const [aspectRatio, setAspectRatio] = useState('3:2')
   const slideshowRef = useRef<SlideshowHandle>(null)
 
   const handleSlideChange = (index: number) => {
     setCurrentSlide(index)
+  }
+
+  const parseAspectRatio = (ratio: string): number => {
+    const [w, h] = ratio.split(':').map(Number)
+    return w && h ? w / h : 3 / 2
   }
 
   return (
@@ -198,6 +215,33 @@ function App() {
               </option>
             ))}
           </select>
+
+          {selectedStyle === 'cascade' && (
+            <>
+              <span style={styles.label}>Subdivisions:</span>
+              <input
+                type="number"
+                style={styles.input}
+                value={cascadeSubdivisions}
+                min={5}
+                max={50}
+                onChange={(e) => setCascadeSubdivisions(Number(e.target.value))}
+              />
+
+              <span style={styles.label}>Aspect Ratio:</span>
+              <select
+                style={styles.select}
+                value={aspectRatio}
+                onChange={(e) => setAspectRatio(e.target.value)}
+              >
+                <option value="16:9">16:9</option>
+                <option value="4:3">4:3</option>
+                <option value="3:2">3:2</option>
+                <option value="1:1">1:1</option>
+                <option value="2:3">2:3 (Portrait)</option>
+              </select>
+            </>
+          )}
 
           <label style={styles.checkbox}>
             <input
@@ -246,13 +290,18 @@ function App() {
             showIndicators
             enableSwipe
             enableKeyboard
+            cascadeSubdivisions={cascadeSubdivisions}
+            aspectRatio={parseAspectRatio(aspectRatio)}
           />
         </div>
 
         <div style={styles.info}>
           Current Slide: {currentSlide + 1} / {demoSlides.length} |
-          Style: <span style={styles.code}>{selectedStyle}</span> |
-          Use arrow keys or swipe to navigate
+          Style: <span style={styles.code}>{selectedStyle}</span>
+          {selectedStyle === 'cascade' && (
+            <> | Subdivisions: <span style={styles.code}>{cascadeSubdivisions}</span> | Aspect: <span style={styles.code}>{aspectRatio}</span></>
+          )}
+          {' '}| Use arrow keys or swipe to navigate
         </div>
       </section>
 
@@ -272,6 +321,8 @@ function App() {
                 height={200}
                 showControls={false}
                 showIndicators
+                cascadeSubdivisions={12}
+                aspectRatio={3 / 2}
               />
             </div>
           ))}
@@ -295,7 +346,9 @@ function App() {
   return (
     <Slideshow
       slides={slides}
-      style="carousel"
+      style="cascade"
+      cascadeSubdivisions={20}
+      aspectRatio={16 / 9}
       autoPlay
       loop
     />
@@ -310,13 +363,19 @@ function App() {
           <div style={styles.card}>
             <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>6 Transition Styles</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Choose from Fade, Carousel, Cube, Flip, Wave, and Zoom transitions
+              Choose from Cascade, Carousel, Cube, Flip, Wave, and Zoom transitions
             </p>
           </div>
           <div style={styles.card}>
-            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Fully Responsive</h3>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Cascading Grid Effect</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Works perfectly on desktop, tablet, and mobile devices
+              Stunning 3D cube grid with diagonal wave animation and configurable subdivisions
+            </p>
+          </div>
+          <div style={styles.card}>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Flexible Aspect Ratios</h3>
+            <p style={{ color: 'rgba(255,255,255,0.7)' }}>
+              Configure aspect ratios (16:9, 4:3, 3:2, 1:1) to match your content
             </p>
           </div>
           <div style={styles.card}>
@@ -329,12 +388,6 @@ function App() {
             <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>TypeScript</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>
               Full TypeScript support with exported types
-            </p>
-          </div>
-          <div style={styles.card}>
-            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Customizable</h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Control autoplay, duration, controls visibility, and more
             </p>
           </div>
           <div style={styles.card}>

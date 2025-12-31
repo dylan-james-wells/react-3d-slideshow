@@ -1,6 +1,6 @@
 export { CarouselTransition } from './CarouselTransition'
+export { CascadeTransition } from './CascadeTransition'
 export { CubeTransition } from './CubeTransition'
-export { FadeTransition } from './FadeTransition'
 export { FlipTransition } from './FlipTransition'
 export { WaveTransition } from './WaveTransition'
 export { ZoomTransition } from './ZoomTransition'

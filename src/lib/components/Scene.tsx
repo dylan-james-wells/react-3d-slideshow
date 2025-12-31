@@ -2,8 +2,8 @@ import { Suspense } from 'react'
 import { SlideData, TransitionStyle } from '../types'
 import {
   CarouselTransition,
+  CascadeTransition,
   CubeTransition,
-  FadeTransition,
   FlipTransition,
   WaveTransition,
   ZoomTransition,
@@ -15,6 +15,8 @@ interface SceneProps {
   transitionDuration: number
   style: TransitionStyle
   direction: 'next' | 'prev'
+  cascadeSubdivisions?: number
+  aspectRatio?: number
 }
 
 function LoadingFallback() {
@@ -32,6 +34,8 @@ export function Scene({
   transitionDuration,
   style,
   direction,
+  cascadeSubdivisions = 20,
+  aspectRatio = 3 / 2,
 }: SceneProps) {
   const renderTransition = () => {
     const props = {
@@ -44,10 +48,16 @@ export function Scene({
     switch (style) {
       case 'carousel':
         return <CarouselTransition {...props} />
+      case 'cascade':
+        return (
+          <CascadeTransition
+            {...props}
+            subdivisions={cascadeSubdivisions}
+            aspectRatio={aspectRatio}
+          />
+        )
       case 'cube':
         return <CubeTransition {...props} />
-      case 'fade':
-        return <FadeTransition {...props} />
       case 'flip':
         return <FlipTransition {...props} />
       case 'wave':
@@ -55,7 +65,7 @@ export function Scene({
       case 'zoom':
         return <ZoomTransition {...props} />
       default:
-        return <FadeTransition {...props} />
+        return <CascadeTransition {...props} subdivisions={cascadeSubdivisions} aspectRatio={aspectRatio} />
     }
   }
 

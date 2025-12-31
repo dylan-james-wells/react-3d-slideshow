@@ -2,8 +2,8 @@ import { ReactNode } from 'react'
 
 export type TransitionStyle =
   | 'carousel'
+  | 'cascade'
   | 'cube'
-  | 'fade'
   | 'flip'
   | 'wave'
   | 'zoom'
@@ -32,6 +32,10 @@ export interface SlideshowProps {
   enableSwipe?: boolean
   enableKeyboard?: boolean
   pauseOnHover?: boolean
+  /** Cascade subdivisions (for 'cascade' style) - controls how many cubes across */
+  cascadeSubdivisions?: number
+  /** Aspect ratio for images (for 'cascade' style) - e.g., 16/9, 4/3, 3/2 */
+  aspectRatio?: number
 }
 
 export interface SlideshowHandle {
