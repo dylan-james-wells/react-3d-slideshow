@@ -47,15 +47,14 @@ const fragmentShader = `
     return result;
   }
 
-  // Hard-light blend mode: combines multiply and screen
-  // If overlay < 0.5: 2 * base * overlay
-  // If overlay >= 0.5: 1 - 2 * (1 - base) * (1 - overlay)
-  vec3 hardLight(vec3 base, vec3 overlay) {
-    vec3 result;
-    result.r = overlay.r < 0.5 ? 2.0 * base.r * overlay.r : 1.0 - 2.0 * (1.0 - base.r) * (1.0 - overlay.r);
-    result.g = overlay.g < 0.5 ? 2.0 * base.g * overlay.g : 1.0 - 2.0 * (1.0 - base.g) * (1.0 - overlay.g);
-    result.b = overlay.b < 0.5 ? 2.0 * base.b * overlay.b : 1.0 - 2.0 * (1.0 - base.b) * (1.0 - overlay.b);
-    return result;
+  // Screen blend mode: always brightens (1 - (1-base) * (1-overlay))
+  vec3 screen(vec3 base, vec3 overlay) {
+    return 1.0 - (1.0 - base) * (1.0 - overlay);
+  }
+
+  // Lighten blend mode: takes the lighter of each channel
+  vec3 lighten(vec3 base, vec3 overlay) {
+    return max(base, overlay);
   }
 
   void main() {
@@ -110,14 +109,18 @@ const fragmentShader = `
     vec3 layer2Color = vec3(layer2R, layer2G, layer2B);
     layer2Color = hueRotate(layer2Color, uHueShift2);
 
-    // Apply hard-light blend mode for overlay layers
-    vec3 hardLight1 = hardLight(baseColor, layer1Color);
-    vec3 hardLight2 = hardLight(baseColor, layer2Color);
+    // Boost overlay colors for more vibrant effect
+    vec3 boostedLayer1 = layer1Color * 1.3;
+    vec3 boostedLayer2 = layer2Color * 1.3;
 
-    // Mix in the hard-light blended overlays based on intensity
+    // Apply screen blend mode (always brightens)
+    vec3 screen1 = screen(baseColor, boostedLayer1);
+    vec3 screen2 = screen(baseColor, boostedLayer2);
+
+    // Mix in the screen blended overlays based on intensity
     vec3 finalColor = baseColor;
-    finalColor = mix(finalColor, hardLight1, uOverlayIntensity * 0.5);
-    finalColor = mix(finalColor, hardLight2, uOverlayIntensity * 0.5);
+    finalColor = mix(finalColor, screen1, uOverlayIntensity * 0.4);
+    finalColor = mix(finalColor, screen2, uOverlayIntensity * 0.4);
 
     gl_FragColor = vec4(finalColor, 1.0);
   }
