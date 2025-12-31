@@ -187,7 +187,7 @@ export function CubeTransition({
         currentPlaneRef.current.rotation.set(0, 0, 0)
 
         // Next plane: bottom face at y = -halfSize, facing down (normal pointing -Y)
-        nextPlaneRef.current.position.set(0, -halfSize, 0)
+        nextPlaneRef.current.position.set(0, halfSize, 0)
         nextPlaneRef.current.rotation.set(-Math.PI / 2, 0, 0)
 
         state.rotationAxis.set(1, 0, 0)
