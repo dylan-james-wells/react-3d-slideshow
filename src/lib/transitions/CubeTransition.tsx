@@ -34,6 +34,7 @@ export function CubeTransition({
     progress: 0,
     rotationAxis: new THREE.Vector3(0, 1, 0),
     rotationAngle: Math.PI / 2, // Always 90 degrees, sign determines direction
+    targetSlideIndex: 0, // The slide we're animating to
   })
 
   // Track step: even = horizontal rotation, odd = vertical rotation
@@ -234,7 +235,7 @@ export function CubeTransition({
 
     state.isAnimating = true
     state.progress = 0
-    prevIndexRef.current = currentIndex
+    state.targetSlideIndex = currentIndex // Store target for when animation completes
   }, [currentIndex, isReady, direction, halfSize, setPlaneTexture])
 
   // Animation
@@ -265,10 +266,13 @@ export function CubeTransition({
         // Current plane shows new slide at front
         currentPlaneRef.current.position.set(0, 0, halfSize)
         currentPlaneRef.current.rotation.set(0, 0, 0)
-        setPlaneTexture(currentPlaneRef.current, currentIndex)
+        setPlaneTexture(currentPlaneRef.current, state.targetSlideIndex)
 
         // Hide next plane
         nextPlaneRef.current.visible = false
+
+        // Update prevIndexRef now that animation is complete
+        prevIndexRef.current = state.targetSlideIndex
       }
     }
   })
