@@ -178,6 +178,7 @@ function App() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [cascadeSubdivisions, setCascadeSubdivisions] = useState(20)
   const [aspectRatio, setAspectRatio] = useState('3:2')
+  const [cubeTransitionDuration, setCubeTransitionDuration] = useState(800)
   const slideshowRef = useRef<SlideshowHandle>(null)
 
   const handleSlideChange = (index: number) => {
@@ -243,6 +244,22 @@ function App() {
             </>
           )}
 
+          {selectedStyle === 'cube' && (
+            <>
+              <span style={styles.label}>Animation Duration:</span>
+              <input
+                type="range"
+                style={{ ...styles.input, width: 120 }}
+                value={cubeTransitionDuration}
+                min={200}
+                max={2000}
+                step={100}
+                onChange={(e) => setCubeTransitionDuration(Number(e.target.value))}
+              />
+              <span style={{ ...styles.label, marginLeft: 0 }}>{cubeTransitionDuration}ms</span>
+            </>
+          )}
+
           <label style={styles.checkbox}>
             <input
               type="checkbox"
@@ -283,7 +300,7 @@ function App() {
             autoPlay={autoPlay}
             autoPlayInterval={3000}
             loop={loop}
-            transitionDuration={800}
+            transitionDuration={selectedStyle === 'cube' ? cubeTransitionDuration : 800}
             height={500}
             onSlideChange={handleSlideChange}
             showControls
@@ -300,6 +317,9 @@ function App() {
           Style: <span style={styles.code}>{selectedStyle}</span>
           {selectedStyle === 'cascade' && (
             <> | Subdivisions: <span style={styles.code}>{cascadeSubdivisions}</span> | Aspect: <span style={styles.code}>{aspectRatio}</span></>
+          )}
+          {selectedStyle === 'cube' && (
+            <> | Duration: <span style={styles.code}>{cubeTransitionDuration}ms</span></>
           )}
           {' '}| Use arrow keys or swipe to navigate
         </div>
