@@ -1,0 +1,4 @@
+export { Slideshow } from './Slideshow'
+export { Controls } from './Controls'
+export { Indicators } from './Indicators'
+export { Scene } from './Scene'
