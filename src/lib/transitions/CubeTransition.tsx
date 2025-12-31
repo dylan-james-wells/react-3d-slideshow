@@ -161,43 +161,37 @@ export function CubeTransition({
     console.log('step', step);
     console.log('currentIndex', currentIndex);
 
-    // Reset pivot position and rotation
+    // Pivot stays at origin (center of theoretical cube)
+    // Both planes are positioned as faces of a cube centered at origin
     pivotRef.current.position.set(0, 0, 0)
     pivotRef.current.rotation.set(0, 0, 0)
 
-    // Current plane: front-facing at z = halfSize
-    currentPlaneRef.current.position.set(0, 0, halfSize)
-    currentPlaneRef.current.rotation.set(0, 0, 0)
-
-    // Position next plane and set rotation axis based on direction
+    // Position planes as two faces of a cube centered at origin
     if (isForward) {
       if (isEvenStep) {
-        // Rotate right: pivot is on the left edge, next plane is perpendicular on left
-        // Pivot at left edge of current plane
-        pivotRef.current.position.set(-halfSize, 0, 0)
+        // Rotate right around Y axis
+        // Current plane: front face at z = +halfSize
+        currentPlaneRef.current.position.set(0, 0, halfSize)
+        currentPlaneRef.current.rotation.set(0, 0, 0)
 
-        // Current plane relative to pivot (pivot is at its left edge)
-        currentPlaneRef.current.position.set(halfSize, 0, halfSize)
-
-        // Next plane is perpendicular, extending back from the pivot
-        nextPlaneRef.current.position.set(halfSize * 2, 0, 0)
+        // Next plane: right face at x = +halfSize, facing right (normal pointing +X)
+        nextPlaneRef.current.position.set(halfSize, 0, 0)
         nextPlaneRef.current.rotation.set(0, Math.PI / 2, 0)
 
         state.rotationAxis.set(0, 1, 0)
-        state.rotationAngle = -Math.PI / 2
+        state.rotationAngle = -Math.PI / 2 // Rotate cube left so right face comes to front
       } else {
-        // Rotate down: pivot is on the top edge
-        pivotRef.current.position.set(0, halfSize, 0)
+        // Rotate down around X axis
+        // Current plane: front face at z = +halfSize
+        currentPlaneRef.current.position.set(0, 0, halfSize)
+        currentPlaneRef.current.rotation.set(0, 0, 0)
 
-        // Current plane relative to pivot
-        currentPlaneRef.current.position.set(0, -halfSize, halfSize)
-
-        // Next plane perpendicular on top
-        nextPlaneRef.current.position.set(0, 0, 0)
+        // Next plane: bottom face at y = -halfSize, facing down (normal pointing -Y)
+        nextPlaneRef.current.position.set(0, -halfSize, 0)
         nextPlaneRef.current.rotation.set(-Math.PI / 2, 0, 0)
 
         state.rotationAxis.set(1, 0, 0)
-        state.rotationAngle = Math.PI / 2
+        state.rotationAngle = Math.PI / 2 // Rotate cube down so bottom face comes to front
       }
       stepRef.current++
     } else {
@@ -205,27 +199,25 @@ export function CubeTransition({
       if (step > 0) {
         const prevStepWasEven = (step - 1) % 2 === 0
         if (prevStepWasEven) {
-          // Undo right (go left): pivot on right edge
-          pivotRef.current.position.set(halfSize, 0, 0)
+          // Undo right (go left): current at front, next on left face
+          currentPlaneRef.current.position.set(0, 0, halfSize)
+          currentPlaneRef.current.rotation.set(0, 0, 0)
 
-          currentPlaneRef.current.position.set(-halfSize, 0, halfSize)
-
-          nextPlaneRef.current.position.set(0, 0, 0)
+          nextPlaneRef.current.position.set(-halfSize, 0, 0)
           nextPlaneRef.current.rotation.set(0, -Math.PI / 2, 0)
 
           state.rotationAxis.set(0, 1, 0)
-          state.rotationAngle = Math.PI / 2
+          state.rotationAngle = Math.PI / 2 // Rotate cube right so left face comes to front
         } else {
-          // Undo down (go up): pivot on bottom edge
-          pivotRef.current.position.set(0, -halfSize, 0)
+          // Undo down (go up): current at front, next on top face
+          currentPlaneRef.current.position.set(0, 0, halfSize)
+          currentPlaneRef.current.rotation.set(0, 0, 0)
 
-          currentPlaneRef.current.position.set(0, halfSize, halfSize)
-
-          nextPlaneRef.current.position.set(0, 0, 0)
+          nextPlaneRef.current.position.set(0, halfSize, 0)
           nextPlaneRef.current.rotation.set(Math.PI / 2, 0, 0)
 
           state.rotationAxis.set(1, 0, 0)
-          state.rotationAngle = -Math.PI / 2
+          state.rotationAngle = -Math.PI / 2 // Rotate cube up so top face comes to front
         }
         stepRef.current--
       }
