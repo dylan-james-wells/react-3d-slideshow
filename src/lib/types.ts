@@ -32,8 +32,10 @@ export interface SlideshowProps {
   enableSwipe?: boolean
   enableKeyboard?: boolean
   pauseOnHover?: boolean
-  /** Cascade subdivisions (for 'cascade' style) - controls how many cubes across */
-  cascadeSubdivisions?: number
+  /** Cascade minTiles (for 'cascade' style) - minimum tiles in shorter dimension, creates square tiles */
+  cascadeMinTiles?: number
+  /** Cascade bloom intensity (for 'cascade' style) - 0 to 1, default 0 */
+  cascadeBloom?: number
   /** Aspect ratio for images (for 'cascade' style) - e.g., 16/9, 4/3, 3/2 */
   aspectRatio?: number
   /** Glitch aberration intensity (for 'glitch' style) - 0 to 1, default 0.5 */

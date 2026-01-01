@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { EffectComposer, Bloom, ToneMapping } from '@react-three/postprocessing'
+import { ToneMappingMode } from 'postprocessing'
 import { SlideData } from '../types'
 
 interface CascadeTransitionProps {
@@ -8,8 +10,27 @@ interface CascadeTransitionProps {
   currentIndex: number
   transitionDuration: number
   direction: 'next' | 'prev'
-  subdivisions?: number
+  minTiles?: number
   aspectRatio?: number
+  bloomIntensity?: number
+}
+
+// Calculate grid dimensions for square tiles
+// minTiles is the minimum number of tiles in the shorter dimension
+const calculateGridDimensions = (aspectRatio: number, minTiles: number) => {
+  const safeTiles = Math.max(2, minTiles)
+
+  if (aspectRatio >= 1) {
+    // Landscape or square: height is shorter dimension
+    const rows = safeTiles
+    const cols = Math.max(2, Math.round(safeTiles * aspectRatio))
+    return { rows, cols }
+  } else {
+    // Portrait: width is shorter dimension
+    const cols = safeTiles
+    const rows = Math.max(2, Math.round(safeTiles / aspectRatio))
+    return { rows, cols }
+  }
 }
 
 // Base size for the entire grid (in Three.js units)
@@ -34,8 +55,9 @@ export function CascadeTransition({
   currentIndex,
   transitionDuration,
   direction,
-  subdivisions = 20,
+  minTiles = 10,
   aspectRatio = 3 / 2,
+  bloomIntensity = 0,
 }: CascadeTransitionProps) {
   const { viewport } = useThree()
   const groupRef = useRef<THREE.Group>(null)
@@ -48,10 +70,10 @@ export function CascadeTransition({
   const animationDirectionRef = useRef<'forward' | 'backward'>('forward')
   const [isReady, setIsReady] = useState(false)
   const initializedRef = useRef(false)
+  const [currentBloomIntensity, setCurrentBloomIntensity] = useState(0)
 
-  // Calculate grid dimensions based on aspect ratio
-  const gridCols = subdivisions
-  const gridRows = Math.max(1, Math.round(subdivisions / aspectRatio))
+  // Calculate grid dimensions for square tiles
+  const { rows: gridRows, cols: gridCols } = calculateGridDimensions(aspectRatio, minTiles)
 
   // Calculate cube size so total grid size remains constant regardless of subdivisions
   // Grid width = gridCols * cubeSize, we want grid width to equal GRID_BASE_SIZE * aspectRatio
@@ -237,7 +259,13 @@ export function CascadeTransition({
       groupRef.current.scale.setScalar(scale)
     }
 
-    if (!isAnimatingRef.current || cubeDataRef.current.length === 0) return
+    if (!isAnimatingRef.current || cubeDataRef.current.length === 0) {
+      // Ensure bloom is off when not animating
+      if (currentBloomIntensity > 0) {
+        setCurrentBloomIntensity(0)
+      }
+      return
+    }
 
     const speed = ANIMATION_SPEED * (1000 / transitionDuration) * 0.8
 
@@ -248,6 +276,13 @@ export function CascadeTransition({
         targetProgressRef.current
       )
     }
+
+    // Calculate dynamic bloom intensity - ramps up then down during transition
+    // Use sine curve for smooth ramp up/down (0 at start, peak at middle, 0 at end)
+    const progress = animationProgressRef.current
+    const sinProgress = Math.sin(progress * Math.PI)
+    const dynamicBloom = sinProgress * bloomIntensity
+    setCurrentBloomIntensity(dynamicBloom)
 
     // Check if animation is complete
     if (animationProgressRef.current >= 1) {
@@ -319,6 +354,17 @@ export function CascadeTransition({
       <ambientLight intensity={0.9} />
       <directionalLight position={[5, 5, 10]} intensity={0.5} />
       <group ref={groupRef} />
+      {bloomIntensity > 0 && (
+        <EffectComposer enableNormalPass={false}>
+          <Bloom
+            intensity={currentBloomIntensity * 2}
+            luminanceThreshold={0.2}
+            luminanceSmoothing={0.9}
+            mipmapBlur
+          />
+          <ToneMapping mode={ToneMappingMode.AGX} />
+        </EffectComposer>
+      )}
     </>
   )
 }

@@ -15,7 +15,8 @@ interface SceneProps {
   transitionDuration: number
   style: TransitionStyle
   direction: 'next' | 'prev'
-  cascadeSubdivisions?: number
+  cascadeMinTiles?: number
+  cascadeBloom?: number
   aspectRatio?: number
   glitchAberration?: number
   glitchScanlines?: number
@@ -38,7 +39,8 @@ export function Scene({
   transitionDuration,
   style,
   direction,
-  cascadeSubdivisions = 20,
+  cascadeMinTiles = 10,
+  cascadeBloom = 0,
   aspectRatio = 3 / 2,
   glitchAberration = 0.5,
   glitchScanlines = 0.5,
@@ -58,8 +60,9 @@ export function Scene({
         return (
           <CascadeTransition
             {...props}
-            subdivisions={cascadeSubdivisions}
+            minTiles={cascadeMinTiles}
             aspectRatio={aspectRatio}
+            bloomIntensity={cascadeBloom}
           />
         )
       case 'cube':
@@ -73,7 +76,7 @@ export function Scene({
       case 'zoom':
         return <ZoomTransition {...props} />
       default:
-        return <CascadeTransition {...props} subdivisions={cascadeSubdivisions} aspectRatio={aspectRatio} />
+        return <CascadeTransition {...props} minTiles={cascadeMinTiles} aspectRatio={aspectRatio} bloomIntensity={cascadeBloom} />
     }
   }
 

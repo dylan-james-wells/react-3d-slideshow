@@ -6,7 +6,9 @@
       "Bash(cat:*)",
       "Bash(npm run build:*)",
       "Bash(npm run dev:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

@@ -177,6 +177,7 @@ function App() {
   const [loop, setLoop] = useState(true)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [aspectRatio, setAspectRatio] = useState('3:2')
+  const [cascadeBloom, setCascadeBloom] = useState(0)
   const [cubeTransitionDuration, setCubeTransitionDuration] = useState(800)
   const [glitchAberration, setGlitchAberration] = useState(0.5)
   const [glitchScanlines, setGlitchScanlines] = useState(0.5)
@@ -234,6 +235,18 @@ function App() {
                 <option value="1:1">1:1</option>
                 <option value="2:3">2:3 (Portrait)</option>
               </select>
+
+              <span style={styles.label}>Bloom:</span>
+              <input
+                type="range"
+                style={{ ...styles.input, width: 120 }}
+                value={cascadeBloom}
+                min={0}
+                max={1}
+                step={0.1}
+                onChange={(e) => setCascadeBloom(Number(e.target.value))}
+              />
+              <span style={{ ...styles.label, marginLeft: 0 }}>{Math.round(cascadeBloom * 100)}%</span>
             </>
           )}
 
@@ -349,7 +362,8 @@ function App() {
             showIndicators
             enableSwipe
             enableKeyboard
-            cascadeSubdivisions={40}
+            cascadeMinTiles={15}
+            cascadeBloom={cascadeBloom}
             aspectRatio={parseAspectRatio(aspectRatio)}
             glitchAberration={glitchAberration}
             glitchScanlines={glitchScanlines}
@@ -362,7 +376,7 @@ function App() {
           Current Slide: {currentSlide + 1} / {demoSlides.length} |
           Style: <span style={styles.code}>{selectedStyle}</span>
           {selectedStyle === 'cascade' && (
-            <> | Aspect: <span style={styles.code}>{aspectRatio}</span></>
+            <> | Aspect: <span style={styles.code}>{aspectRatio}</span> | Bloom: <span style={styles.code}>{Math.round(cascadeBloom * 100)}%</span></>
           )}
           {selectedStyle === 'cube' && (
             <> | Duration: <span style={styles.code}>{cubeTransitionDuration}ms</span></>
@@ -390,7 +404,7 @@ function App() {
                 height={200}
                 showControls={false}
                 showIndicators
-                cascadeSubdivisions={12}
+                cascadeMinTiles={6}
                 aspectRatio={3 / 2}
               />
             </div>

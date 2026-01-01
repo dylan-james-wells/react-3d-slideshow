@@ -20,7 +20,7 @@ const defaultProps: Partial<SlideshowProps> = {
   enableSwipe: true,
   enableKeyboard: true,
   pauseOnHover: true,
-  cascadeSubdivisions: 20,
+  cascadeMinTiles: 10,
   aspectRatio: 3 / 2,
   glitchAberration: 0.5,
   glitchScanlines: 0.5,
@@ -46,7 +46,8 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       enableSwipe = defaultProps.enableSwipe,
       enableKeyboard = defaultProps.enableKeyboard,
       pauseOnHover = defaultProps.pauseOnHover,
-      cascadeSubdivisions = defaultProps.cascadeSubdivisions,
+      cascadeMinTiles = defaultProps.cascadeMinTiles,
+      cascadeBloom = 0,
       aspectRatio = defaultProps.aspectRatio,
       glitchAberration = defaultProps.glitchAberration,
       glitchScanlines = defaultProps.glitchScanlines,
@@ -144,7 +145,8 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             transitionDuration={transitionDuration}
             style={style}
             direction={direction}
-            cascadeSubdivisions={cascadeSubdivisions}
+            cascadeMinTiles={cascadeMinTiles}
+            cascadeBloom={cascadeBloom}
             aspectRatio={aspectRatio}
             glitchAberration={glitchAberration}
             glitchScanlines={glitchScanlines}
