@@ -11,6 +11,7 @@ interface GlitchTransitionProps {
   aspectRatio?: number
   aberrationIntensity?: number
   scanlinesIntensity?: number
+  grainIntensity?: number
 }
 
 const vertexShader = `
@@ -35,8 +36,14 @@ const fragmentShader = `
   uniform float uHueShift1;
   uniform float uHueShift2;
   uniform float uScanlinesIntensity;
+  uniform float uGrainIntensity;
 
   varying vec2 vUv;
+
+  // Film grain noise function
+  float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+  }
 
   // Hue rotation function
   vec3 hueRotate(vec3 color, float hue) {
@@ -175,6 +182,19 @@ const fragmentShader = `
       finalColor *= (1.0 + flicker);
     }
 
+    // === Film grain effect ===
+    if (uGrainIntensity > 0.001) {
+      // Rescale intensity: old 20% = new 50%, so multiply by 0.4
+      float scaledGrain = uGrainIntensity * 0.4;
+
+      // Create animated grain by using time to offset the noise
+      vec2 grainUv = uv * 500.0 + uTime * 100.0;
+      float grain = random(grainUv) - 0.5;
+
+      // Apply grain - adds and subtracts brightness randomly
+      finalColor += grain * scaledGrain * 0.15;
+    }
+
     gl_FragColor = vec4(finalColor, 1.0);
 
     // Apply sRGB encoding to match Three.js output color space
@@ -189,6 +209,7 @@ export function GlitchTransition({
   aspectRatio = 3 / 2,
   aberrationIntensity = 0.5,
   scanlinesIntensity = 0.5,
+  grainIntensity = 0.5,
 }: GlitchTransitionProps) {
   const { viewport } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
@@ -263,6 +284,7 @@ export function GlitchTransition({
         uHueShift1: { value: 0 },
         uHueShift2: { value: 0 },
         uScanlinesIntensity: { value: 0 },
+        uGrainIntensity: { value: 0 },
       },
     })
     return material
@@ -356,6 +378,9 @@ export function GlitchTransition({
       // Scanlines intensity follows the same curve
       shaderMaterial.uniforms.uScanlinesIntensity.value = flattenedCurve * scanlinesIntensity
 
+      // Grain intensity follows the same curve
+      shaderMaterial.uniforms.uGrainIntensity.value = flattenedCurve * grainIntensity
+
       // === Jerky glitch movement for layer 1 ===
       if (time >= glitch.layer1NextGlitch) {
         // Jump to new random target
@@ -406,6 +431,7 @@ export function GlitchTransition({
         shaderMaterial.uniforms.uHueShift1.value = 0
         shaderMaterial.uniforms.uHueShift2.value = 0
         shaderMaterial.uniforms.uScanlinesIntensity.value = 0
+        shaderMaterial.uniforms.uGrainIntensity.value = 0
         timeRef.current = 0
         // Reset glitch state
         glitch.layer1CurrentX = 0

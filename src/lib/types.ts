@@ -40,6 +40,8 @@ export interface SlideshowProps {
   glitchAberration?: number
   /** Glitch scanlines intensity (for 'glitch' style) - 0 to 1, default 0.5 */
   glitchScanlines?: number
+  /** Glitch film grain intensity (for 'glitch' style) - 0 to 1, default 0.5 */
+  glitchGrain?: number
 }
 
 export interface SlideshowHandle {

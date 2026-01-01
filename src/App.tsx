@@ -181,6 +181,7 @@ function App() {
   const [cubeTransitionDuration, setCubeTransitionDuration] = useState(800)
   const [glitchAberration, setGlitchAberration] = useState(0.5)
   const [glitchScanlines, setGlitchScanlines] = useState(0.5)
+  const [glitchGrain, setGlitchGrain] = useState(0.5)
   const slideshowRef = useRef<SlideshowHandle>(null)
 
   const handleSlideChange = (index: number) => {
@@ -287,6 +288,18 @@ function App() {
                 onChange={(e) => setGlitchScanlines(Number(e.target.value))}
               />
               <span style={{ ...styles.label, marginLeft: 0 }}>{Math.round(glitchScanlines * 100)}%</span>
+
+              <span style={styles.label}>Grain:</span>
+              <input
+                type="range"
+                style={{ ...styles.input, width: 120 }}
+                value={glitchGrain}
+                min={0}
+                max={1}
+                step={0.1}
+                onChange={(e) => setGlitchGrain(Number(e.target.value))}
+              />
+              <span style={{ ...styles.label, marginLeft: 0 }}>{Math.round(glitchGrain * 100)}%</span>
             </>
           )}
 
@@ -341,6 +354,7 @@ function App() {
             aspectRatio={parseAspectRatio(aspectRatio)}
             glitchAberration={glitchAberration}
             glitchScanlines={glitchScanlines}
+            glitchGrain={glitchGrain}
           />
         </div>
 

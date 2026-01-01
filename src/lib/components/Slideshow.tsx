@@ -24,6 +24,7 @@ const defaultProps: Partial<SlideshowProps> = {
   aspectRatio: 3 / 2,
   glitchAberration: 0.5,
   glitchScanlines: 0.5,
+  glitchGrain: 0.5,
 }
 
 export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
@@ -49,6 +50,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       aspectRatio = defaultProps.aspectRatio,
       glitchAberration = defaultProps.glitchAberration,
       glitchScanlines = defaultProps.glitchScanlines,
+      glitchGrain = defaultProps.glitchGrain,
     } = props
 
     const {
@@ -145,6 +147,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             aspectRatio={aspectRatio}
             glitchAberration={glitchAberration}
             glitchScanlines={glitchScanlines}
+            glitchGrain={glitchGrain}
           />
         </Canvas>
 
