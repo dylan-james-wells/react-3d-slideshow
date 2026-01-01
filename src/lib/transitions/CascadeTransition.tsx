@@ -12,7 +12,8 @@ interface CascadeTransitionProps {
   aspectRatio?: number
 }
 
-const CUBE_SIZE = 1
+// Base size for the entire grid (in Three.js units)
+const GRID_BASE_SIZE = 3
 const GAP = 0
 const ANIMATION_SPEED = 1.5
 
@@ -52,18 +53,24 @@ export function CascadeTransition({
   const gridCols = subdivisions
   const gridRows = Math.max(1, Math.round(subdivisions / aspectRatio))
 
+  // Calculate cube size so total grid size remains constant regardless of subdivisions
+  // Grid width = gridCols * cubeSize, we want grid width to equal GRID_BASE_SIZE * aspectRatio
+  // Grid height = gridRows * cubeSize, we want grid height to equal GRID_BASE_SIZE
+  const cubeSize = GRID_BASE_SIZE / gridRows
+
+  // Fixed grid dimensions based on aspect ratio
+  const gridWidth = GRID_BASE_SIZE * aspectRatio
+  const gridHeight = GRID_BASE_SIZE
+
   // Calculate the scale to fit the viewport
   const getScale = () => {
-    const gridWidth = gridCols * (CUBE_SIZE + GAP)
-    const gridHeight = gridRows * (CUBE_SIZE + GAP)
-
     // Use viewport dimensions (in Three.js units at z=0)
     const viewportWidth = viewport.width
     const viewportHeight = viewport.height
 
     // Scale to fit with some padding
-    const scaleX = (viewportWidth * 0.95) / gridWidth
-    const scaleY = (viewportHeight * 0.85) / gridHeight
+    const scaleX = (viewportWidth * 0.8) / gridWidth
+    const scaleY = (viewportHeight * 0.8) / gridHeight
 
     return Math.min(scaleX, scaleY)
   }
@@ -143,9 +150,6 @@ export function CascadeTransition({
     }
     cubeDataRef.current = []
 
-    const gridWidth = gridCols * (CUBE_SIZE + GAP)
-    const gridHeight = gridRows * (CUBE_SIZE + GAP)
-
     for (let row = 0; row < gridRows; row++) {
       for (let col = 0; col < gridCols; col++) {
         // Calculate UV offset for this cube's position in the grid
@@ -154,7 +158,7 @@ export function CascadeTransition({
         const vMin = row / gridRows
         const vMax = (row + 1) / gridRows
 
-        const geometry = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE)
+        const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize)
         const uvAttribute = geometry.getAttribute('uv')
         const uvArray = uvAttribute.array as Float32Array
 
@@ -185,8 +189,8 @@ export function CascadeTransition({
         const cube = new THREE.Mesh(geometry, faceMaterials)
 
         // Position cube centered in the grid
-        const x = (col * (CUBE_SIZE + GAP)) - gridWidth / 2 + (CUBE_SIZE + GAP) / 2
-        const y = (row * (CUBE_SIZE + GAP)) - gridHeight / 2 + (CUBE_SIZE + GAP) / 2
+        const x = (col * (cubeSize + GAP)) - gridWidth / 2 + (cubeSize + GAP) / 2
+        const y = (row * (cubeSize + GAP)) - gridHeight / 2 + (cubeSize + GAP) / 2
         cube.position.set(x, y, 0)
 
         groupRef.current.add(cube)
@@ -199,7 +203,7 @@ export function CascadeTransition({
         })
       }
     }
-  }, [isReady, gridCols, gridRows, currentIndex])
+  }, [isReady, gridCols, gridRows, cubeSize, gridWidth, gridHeight, currentIndex])
 
   // Handle slide changes
   useEffect(() => {
