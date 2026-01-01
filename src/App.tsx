@@ -176,7 +176,6 @@ function App() {
   const [autoPlay, setAutoPlay] = useState(false)
   const [loop, setLoop] = useState(true)
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [cascadeSubdivisions, setCascadeSubdivisions] = useState(20)
   const [aspectRatio, setAspectRatio] = useState('3:2')
   const [cubeTransitionDuration, setCubeTransitionDuration] = useState(800)
   const [glitchAberration, setGlitchAberration] = useState(0.5)
@@ -223,16 +222,6 @@ function App() {
 
           {selectedStyle === 'cascade' && (
             <>
-              <span style={styles.label}>Subdivisions:</span>
-              <input
-                type="number"
-                style={styles.input}
-                value={cascadeSubdivisions}
-                min={5}
-                max={50}
-                onChange={(e) => setCascadeSubdivisions(Number(e.target.value))}
-              />
-
               <span style={styles.label}>Aspect Ratio:</span>
               <select
                 style={styles.select}
@@ -360,7 +349,7 @@ function App() {
             showIndicators
             enableSwipe
             enableKeyboard
-            cascadeSubdivisions={cascadeSubdivisions}
+            cascadeSubdivisions={40}
             aspectRatio={parseAspectRatio(aspectRatio)}
             glitchAberration={glitchAberration}
             glitchScanlines={glitchScanlines}
@@ -373,7 +362,7 @@ function App() {
           Current Slide: {currentSlide + 1} / {demoSlides.length} |
           Style: <span style={styles.code}>{selectedStyle}</span>
           {selectedStyle === 'cascade' && (
-            <> | Subdivisions: <span style={styles.code}>{cascadeSubdivisions}</span> | Aspect: <span style={styles.code}>{aspectRatio}</span></>
+            <> | Aspect: <span style={styles.code}>{aspectRatio}</span></>
           )}
           {selectedStyle === 'cube' && (
             <> | Duration: <span style={styles.code}>{cubeTransitionDuration}ms</span></>
