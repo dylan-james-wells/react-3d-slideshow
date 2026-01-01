@@ -179,6 +179,7 @@ function App() {
   const [glitchScanlines, setGlitchScanlines] = useState(0.5)
   const [glitchGrain, setGlitchGrain] = useState(0.5)
   const [fullscreen, setFullscreen] = useState(false)
+  const [cascadeMinTiles, setCascadeMinTiles] = useState(15)
   const slideshowRef = useRef<SlideshowHandle>(null)
 
   const handleSlideChange = (index: number) => {
@@ -231,6 +232,22 @@ function App() {
                 <option value="1:1">1:1</option>
                 <option value="2:3">2:3 (Portrait)</option>
               </select>
+            </>
+          )}
+
+          {selectedStyle === 'cascade' && (
+            <>
+              <span style={styles.label}>Min Tiles:</span>
+              <input
+                type="range"
+                style={{ ...styles.input, width: 120 }}
+                value={cascadeMinTiles}
+                min={3}
+                max={30}
+                step={1}
+                onChange={(e) => setCascadeMinTiles(Number(e.target.value))}
+              />
+              <span style={{ ...styles.label, marginLeft: 0 }}>{cascadeMinTiles}</span>
             </>
           )}
 
@@ -346,7 +363,7 @@ function App() {
             showIndicators
             enableSwipe
             enableKeyboard
-            cascadeMinTiles={15}
+            cascadeMinTiles={cascadeMinTiles}
             aspectRatio={parseAspectRatio(aspectRatio)}
             glitchAberration={glitchAberration}
             glitchScanlines={glitchScanlines}
@@ -360,6 +377,9 @@ function App() {
           Style: <span style={styles.code}>{selectedStyle}</span>
           {(selectedStyle === 'cascade' || selectedStyle === 'glitch') && (
             <> | Aspect: <span style={styles.code}>{aspectRatio}</span></>
+          )}
+          {selectedStyle === 'cascade' && (
+            <> | Tiles: <span style={styles.code}>{cascadeMinTiles}</span></>
           )}
           {selectedStyle === 'cube' && (
             <> | Duration: <span style={styles.code}>{cubeTransitionDuration}ms</span></>
