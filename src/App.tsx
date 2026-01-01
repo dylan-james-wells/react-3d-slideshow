@@ -25,10 +25,10 @@ const demoSlides: SlideData[] = [
 ]
 
 const transitionStyles: TransitionStyle[] = [
+  'glitch',
   'cascade',
   'cube',
   'flip',
-  'glitch',
   'wave',
   'zoom',
 ]
@@ -172,7 +172,7 @@ const styles: Record<string, React.CSSProperties> = {
 }
 
 function App() {
-  const [selectedStyle, setSelectedStyle] = useState<TransitionStyle>('cascade')
+  const [selectedStyle, setSelectedStyle] = useState<TransitionStyle>('glitch')
   const [autoPlay, setAutoPlay] = useState(false)
   const [loop, setLoop] = useState(true)
   const [currentSlide, setCurrentSlide] = useState(0)
