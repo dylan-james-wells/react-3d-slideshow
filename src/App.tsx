@@ -217,7 +217,7 @@ function App() {
             ))}
           </select>
 
-          {selectedStyle === 'cascade' && (
+          {(selectedStyle === 'cascade' || selectedStyle === 'glitch') && (
             <>
               <span style={styles.label}>Aspect Ratio:</span>
               <select
@@ -358,7 +358,7 @@ function App() {
         <div style={styles.info}>
           Current Slide: {currentSlide + 1} / {demoSlides.length} |
           Style: <span style={styles.code}>{selectedStyle}</span>
-          {selectedStyle === 'cascade' && (
+          {(selectedStyle === 'cascade' || selectedStyle === 'glitch') && (
             <> | Aspect: <span style={styles.code}>{aspectRatio}</span></>
           )}
           {selectedStyle === 'cube' && (

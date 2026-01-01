@@ -79,6 +79,25 @@ export function CascadeTransition({
   const gridWidth = GRID_BASE_SIZE * aspectRatio
   const gridHeight = GRID_BASE_SIZE
 
+  // Reset initialization when grid parameters change
+  useEffect(() => {
+    if (initializedRef.current && groupRef.current) {
+      // Clean up existing cubes
+      while (groupRef.current.children.length > 0) {
+        const child = groupRef.current.children[0]
+        groupRef.current.remove(child)
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose()
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose())
+          }
+        }
+      }
+      cubeDataRef.current = []
+      initializedRef.current = false
+    }
+  }, [aspectRatio, minTiles, gridRows, gridCols])
+
   // Calculate the scale to fit the viewport
   const getScale = () => {
     // Use viewport dimensions (in Three.js units at z=0)
