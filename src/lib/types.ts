@@ -3,10 +3,7 @@ import { ReactNode } from 'react'
 export type TransitionStyle =
   | 'cascade'
   | 'cube'
-  | 'flip'
   | 'glitch'
-  | 'wave'
-  | 'zoom'
 
 export interface SlideData {
   id: string | number

@@ -3,10 +3,7 @@ import { SlideData, TransitionStyle } from '../types'
 import {
   CascadeTransition,
   CubeTransition,
-  FlipTransition,
   GlitchTransition,
-  WaveTransition,
-  ZoomTransition,
 } from '../transitions'
 
 interface SceneProps {
@@ -64,14 +61,8 @@ export function Scene({
         )
       case 'cube':
         return <CubeTransition {...props} />
-      case 'flip':
-        return <FlipTransition {...props} />
       case 'glitch':
         return <GlitchTransition {...props} aspectRatio={aspectRatio} aberrationIntensity={glitchAberration} scanlinesIntensity={glitchScanlines} grainIntensity={glitchGrain} fullscreen={fullscreen} />
-      case 'wave':
-        return <WaveTransition {...props} />
-      case 'zoom':
-        return <ZoomTransition {...props} />
       default:
         return <CascadeTransition {...props} minTiles={cascadeMinTiles} aspectRatio={aspectRatio} />
     }

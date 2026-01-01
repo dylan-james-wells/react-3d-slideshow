@@ -28,9 +28,6 @@ const transitionStyles: TransitionStyle[] = [
   'glitch',
   'cascade',
   'cube',
-  'flip',
-  'wave',
-  'zoom',
 ]
 
 const styles: Record<string, React.CSSProperties> = {

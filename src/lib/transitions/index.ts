@@ -1,6 +1,3 @@
 export { CascadeTransition } from './CascadeTransition'
 export { CubeTransition } from './CubeTransition'
-export { FlipTransition } from './FlipTransition'
 export { GlitchTransition } from './GlitchTransition'
-export { WaveTransition } from './WaveTransition'
-export { ZoomTransition } from './ZoomTransition'
