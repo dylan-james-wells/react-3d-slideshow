@@ -304,12 +304,17 @@ export function GlitchTransition({
       const showNext = progress >= 0.5 ? 1 : 0
       shaderMaterial.uniforms.uShowNext.value = showNext
 
-      // Aberration ramps up to middle, then ramps down
-      const aberration = Math.sin(progress * Math.PI) * 0.15
+      // Use a flattened sine curve that holds at peak longer
+      // sin^0.7 rises/falls more slowly and holds near max longer
+      const sinProgress = Math.sin(progress * Math.PI)
+      const flattenedCurve = Math.pow(sinProgress, 0.6)
+
+      // Aberration ramps up, holds, then ramps down
+      const aberration = flattenedCurve * 0.15
       shaderMaterial.uniforms.uAberrationAmount.value = aberration
 
-      // Overlay intensity follows same ramp as aberration
-      const overlayIntensity = Math.sin(progress * Math.PI)
+      // Overlay intensity follows same flattened curve
+      const overlayIntensity = flattenedCurve
       shaderMaterial.uniforms.uOverlayIntensity.value = overlayIntensity
 
       // === Jerky glitch movement for layer 1 ===
