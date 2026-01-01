@@ -182,6 +182,7 @@ function App() {
   const [glitchAberration, setGlitchAberration] = useState(0.5)
   const [glitchScanlines, setGlitchScanlines] = useState(0.5)
   const [glitchGrain, setGlitchGrain] = useState(0.5)
+  const [fullscreen, setFullscreen] = useState(false)
   const slideshowRef = useRef<SlideshowHandle>(null)
 
   const handleSlideChange = (index: number) => {
@@ -300,6 +301,15 @@ function App() {
                 onChange={(e) => setGlitchGrain(Number(e.target.value))}
               />
               <span style={{ ...styles.label, marginLeft: 0 }}>{Math.round(glitchGrain * 100)}%</span>
+
+              <label style={styles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={fullscreen}
+                  onChange={(e) => setFullscreen(e.target.checked)}
+                />
+                Fullscreen (Cover)
+              </label>
             </>
           )}
 
@@ -355,6 +365,7 @@ function App() {
             glitchAberration={glitchAberration}
             glitchScanlines={glitchScanlines}
             glitchGrain={glitchGrain}
+            fullscreen={fullscreen}
           />
         </div>
 

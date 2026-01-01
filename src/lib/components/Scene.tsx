@@ -20,6 +20,7 @@ interface SceneProps {
   glitchAberration?: number
   glitchScanlines?: number
   glitchGrain?: number
+  fullscreen?: boolean
 }
 
 function LoadingFallback() {
@@ -42,6 +43,7 @@ export function Scene({
   glitchAberration = 0.5,
   glitchScanlines = 0.5,
   glitchGrain = 0.5,
+  fullscreen = false,
 }: SceneProps) {
   const renderTransition = () => {
     const props = {
@@ -65,7 +67,7 @@ export function Scene({
       case 'flip':
         return <FlipTransition {...props} />
       case 'glitch':
-        return <GlitchTransition {...props} aspectRatio={aspectRatio} aberrationIntensity={glitchAberration} scanlinesIntensity={glitchScanlines} grainIntensity={glitchGrain} />
+        return <GlitchTransition {...props} aspectRatio={aspectRatio} aberrationIntensity={glitchAberration} scanlinesIntensity={glitchScanlines} grainIntensity={glitchGrain} fullscreen={fullscreen} />
       case 'wave':
         return <WaveTransition {...props} />
       case 'zoom':

@@ -51,6 +51,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       glitchAberration = defaultProps.glitchAberration,
       glitchScanlines = defaultProps.glitchScanlines,
       glitchGrain = defaultProps.glitchGrain,
+      fullscreen = false,
     } = props
 
     const {
@@ -148,6 +149,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             glitchAberration={glitchAberration}
             glitchScanlines={glitchScanlines}
             glitchGrain={glitchGrain}
+            fullscreen={fullscreen}
           />
         </Canvas>
 

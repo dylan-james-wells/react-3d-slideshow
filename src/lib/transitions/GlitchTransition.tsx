@@ -12,13 +12,17 @@ interface GlitchTransitionProps {
   aberrationIntensity?: number
   scanlinesIntensity?: number
   grainIntensity?: number
+  fullscreen?: boolean
 }
 
 const vertexShader = `
   varying vec2 vUv;
+  uniform vec2 uUvScale;
+  uniform vec2 uUvOffset;
 
   void main() {
-    vUv = uv;
+    // Apply UV scaling and offset for cover mode
+    vUv = uv * uUvScale + uUvOffset;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `
@@ -210,6 +214,7 @@ export function GlitchTransition({
   aberrationIntensity = 0.5,
   scanlinesIntensity = 0.5,
   grainIntensity = 0.5,
+  fullscreen = false,
 }: GlitchTransitionProps) {
   const { viewport } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
@@ -285,6 +290,8 @@ export function GlitchTransition({
         uHueShift2: { value: 0 },
         uScanlinesIntensity: { value: 0 },
         uGrainIntensity: { value: 0 },
+        uUvScale: { value: new THREE.Vector2(1, 1) },
+        uUvOffset: { value: new THREE.Vector2(0, 0) },
       },
     })
     return material
@@ -447,18 +454,48 @@ export function GlitchTransition({
     }
   })
 
-  // Calculate plane dimensions based on aspect ratio
-  const maxWidth = viewport.width * 0.8
-  const maxHeight = viewport.height * 0.8
+  // Calculate plane dimensions based on aspect ratio and fullscreen mode
   let planeWidth: number
   let planeHeight: number
+  let uvScale = { x: 1, y: 1 }
+  let uvOffset = { x: 0, y: 0 }
 
-  if (maxWidth / aspectRatio <= maxHeight) {
-    planeWidth = maxWidth
-    planeHeight = maxWidth / aspectRatio
+  if (fullscreen) {
+    // In fullscreen mode, fill the entire viewport
+    planeWidth = viewport.width
+    planeHeight = viewport.height
+
+    // Calculate UV scaling to achieve "cover" behavior
+    // The texture should fill the plane while maintaining aspect ratio
+    const viewportAspect = viewport.width / viewport.height
+
+    if (viewportAspect > aspectRatio) {
+      // Viewport is wider than content - scale height, crop top/bottom
+      uvScale.y = aspectRatio / viewportAspect
+      uvOffset.y = (1 - uvScale.y) / 2
+    } else {
+      // Viewport is taller than content - scale width, crop left/right
+      uvScale.x = viewportAspect / aspectRatio
+      uvOffset.x = (1 - uvScale.x) / 2
+    }
   } else {
-    planeHeight = maxHeight
-    planeWidth = maxHeight * aspectRatio
+    // Standard mode: fit within 80% of viewport
+    const maxWidth = viewport.width * 0.8
+    const maxHeight = viewport.height * 0.8
+
+    if (maxWidth / aspectRatio <= maxHeight) {
+      planeWidth = maxWidth
+      planeHeight = maxWidth / aspectRatio
+    } else {
+      planeHeight = maxHeight
+      planeWidth = maxHeight * aspectRatio
+    }
+  }
+
+  // Update UV uniforms
+  if (shaderMaterial.uniforms.uUvScale) {
+    shaderMaterial.uniforms.uUvScale.value.set(uvScale.x, uvScale.y)
+    shaderMaterial.uniforms.uUvOffset.value.set(uvOffset.x, uvOffset.y)
   }
 
   if (!isReady) {

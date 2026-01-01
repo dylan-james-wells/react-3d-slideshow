@@ -42,6 +42,8 @@ export interface SlideshowProps {
   glitchScanlines?: number
   /** Glitch film grain intensity (for 'glitch' style) - 0 to 1, default 0.5 */
   glitchGrain?: number
+  /** Fullscreen cover mode - fills container like object-fit: cover (for 'glitch' style) */
+  fullscreen?: boolean
 }
 
 export interface SlideshowHandle {
