@@ -137,6 +137,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
           camera={{ position: [0, 0, 5], fov: 50 }}
           dpr={[1, 2]}
           style={{ touchAction: 'pan-y' }}
+          flat
         >
           <Scene
             slides={slides}

@@ -44,7 +44,7 @@ interface CubeData {
   row: number
   col: number
   baseZ: number
-  faceMaterials: THREE.MeshStandardMaterial[]
+  faceMaterials: THREE.MeshBasicMaterial[]
 }
 
 export function CascadeTransition({
@@ -194,13 +194,14 @@ export function CascadeTransition({
         uvAttribute.needsUpdate = true
 
         // Face order: +X, -X, +Y, -Y, +Z, -Z
+        // Use MeshBasicMaterial to display textures without lighting effects
         const faceMaterials = [
-          new THREE.MeshStandardMaterial({ map: initialTexture }), // +X (right)
-          new THREE.MeshStandardMaterial({ map: initialTexture }), // -X (left)
-          new THREE.MeshStandardMaterial({ map: initialTexture }), // +Y (top)
-          new THREE.MeshStandardMaterial({ map: initialTexture }), // -Y (bottom)
-          new THREE.MeshStandardMaterial({ map: initialTexture }), // +Z (front)
-          new THREE.MeshStandardMaterial({ map: initialTexture }), // -Z (back)
+          new THREE.MeshBasicMaterial({ map: initialTexture }), // +X (right)
+          new THREE.MeshBasicMaterial({ map: initialTexture }), // -X (left)
+          new THREE.MeshBasicMaterial({ map: initialTexture }), // +Y (top)
+          new THREE.MeshBasicMaterial({ map: initialTexture }), // -Y (bottom)
+          new THREE.MeshBasicMaterial({ map: initialTexture }), // +Z (front)
+          new THREE.MeshBasicMaterial({ map: initialTexture }), // -Z (back)
         ]
 
         const cube = new THREE.Mesh(geometry, faceMaterials)
@@ -333,11 +334,5 @@ export function CascadeTransition({
     }
   })
 
-  return (
-    <>
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[5, 5, 10]} intensity={0.5} />
-      <group ref={groupRef} />
-    </>
-  )
+  return <group ref={groupRef} />
 }
