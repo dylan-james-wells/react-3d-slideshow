@@ -451,8 +451,7 @@ function App() {
   return (
     <Slideshow
       slides={slides}
-      style="cascade"
-      cascadeSubdivisions={20}
+      style="glitch"
       aspectRatio={16 / 9}
       autoPlay
       loop
@@ -466,21 +465,27 @@ function App() {
         <h2 style={styles.sectionTitle}>Features</h2>
         <div style={styles.grid}>
           <div style={styles.card}>
-            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>6 Transition Styles</h3>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>3 Transition Styles</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Choose from Cascade, Carousel, Cube, Flip, Wave, and Zoom transitions
+              Choose from Glitch, Cascade, and Cube transitions - each with unique 3D effects
             </p>
           </div>
           <div style={styles.card}>
-            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Cascading Grid Effect</h3>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Glitch Effect</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Stunning 3D cube grid with diagonal wave animation and configurable subdivisions
+              Chromatic aberration, scanlines, and film grain with configurable intensity
             </p>
           </div>
           <div style={styles.card}>
-            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Flexible Aspect Ratios</h3>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Cascade Grid</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Configure aspect ratios (16:9, 4:3, 3:2, 1:1) to match your content
+              3D cube grid with diagonal wave animation and configurable tile count
+            </p>
+          </div>
+          <div style={styles.card}>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Fullscreen Mode</h3>
+            <p style={{ color: 'rgba(255,255,255,0.7)' }}>
+              Cover mode for Glitch and Cascade transitions fills the entire viewport
             </p>
           </div>
           <div style={styles.card}>
@@ -490,15 +495,9 @@ function App() {
             </p>
           </div>
           <div style={styles.card}>
-            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>TypeScript</h3>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>TypeScript & Ref API</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Full TypeScript support with exported types
-            </p>
-          </div>
-          <div style={styles.card}>
-            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Ref API</h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Programmatic control with next(), prev(), and goTo() methods
+              Full TypeScript support with next(), prev(), and goTo() methods
             </p>
           </div>
         </div>
