@@ -148,6 +148,9 @@ const fragmentShader = `
 
     // === Scanlines effect ===
     if (uScanlinesIntensity > 0.001) {
+      // Rescale intensity: old 10% = new 50%, so multiply by 0.2
+      float scaledIntensity = uScanlinesIntensity * 0.2;
+
       // Create horizontal scanlines - lower frequency for more visible lines
       float scanlineFreq = 300.0;
       float scrollSpeed = uTime * 80.0;
@@ -160,15 +163,15 @@ const fragmentShader = `
       scanline = smoothstep(0.3, 0.7, scanline);
 
       // Dark scanlines (the dark lines between the bright ones)
-      float darkness = mix(1.0, 0.3, (1.0 - scanline) * uScanlinesIntensity);
+      float darkness = mix(1.0, 0.3, (1.0 - scanline) * scaledIntensity);
       finalColor *= darkness;
 
       // Add CRT phosphor glow between lines
-      float glow = scanline * 0.15 * uScanlinesIntensity;
+      float glow = scanline * 0.15 * scaledIntensity;
       finalColor += glow;
 
       // Add subtle flicker
-      float flicker = sin(uTime * 45.0) * 0.03 * uScanlinesIntensity;
+      float flicker = sin(uTime * 45.0) * 0.03 * scaledIntensity;
       finalColor *= (1.0 + flicker);
     }
 
