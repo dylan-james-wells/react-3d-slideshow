@@ -197,9 +197,9 @@ function App() {
       <header style={styles.header}>
         <h1 style={styles.title}>React 3D Slideshow</h1>
         <p style={styles.subtitle}>
-          A simple three.js slideshow component with experimental transitions.
+          A simple three.js based slideshow component with experimental transitions.
         </p>
-      </header>
+    </header>
 
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>Interactive Demo</h2>
