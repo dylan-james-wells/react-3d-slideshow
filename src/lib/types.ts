@@ -36,6 +36,8 @@ export interface SlideshowProps {
   cascadeSubdivisions?: number
   /** Aspect ratio for images (for 'cascade' style) - e.g., 16/9, 4/3, 3/2 */
   aspectRatio?: number
+  /** Glitch aberration intensity (for 'glitch' style) - 0 to 1, default 0.5 */
+  glitchAberration?: number
 }
 
 export interface SlideshowHandle {

@@ -22,6 +22,7 @@ const defaultProps: Partial<SlideshowProps> = {
   pauseOnHover: true,
   cascadeSubdivisions: 20,
   aspectRatio: 3 / 2,
+  glitchAberration: 0.5,
 }
 
 export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
@@ -45,6 +46,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       pauseOnHover = defaultProps.pauseOnHover,
       cascadeSubdivisions = defaultProps.cascadeSubdivisions,
       aspectRatio = defaultProps.aspectRatio,
+      glitchAberration = defaultProps.glitchAberration,
     } = props
 
     const {
@@ -139,6 +141,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             direction={direction}
             cascadeSubdivisions={cascadeSubdivisions}
             aspectRatio={aspectRatio}
+            glitchAberration={glitchAberration}
           />
         </Canvas>
 

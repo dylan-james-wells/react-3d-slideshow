@@ -179,6 +179,7 @@ function App() {
   const [cascadeSubdivisions, setCascadeSubdivisions] = useState(20)
   const [aspectRatio, setAspectRatio] = useState('3:2')
   const [cubeTransitionDuration, setCubeTransitionDuration] = useState(800)
+  const [glitchAberration, setGlitchAberration] = useState(0.5)
   const slideshowRef = useRef<SlideshowHandle>(null)
 
   const handleSlideChange = (index: number) => {
@@ -260,6 +261,22 @@ function App() {
             </>
           )}
 
+          {selectedStyle === 'glitch' && (
+            <>
+              <span style={styles.label}>Aberration:</span>
+              <input
+                type="range"
+                style={{ ...styles.input, width: 120 }}
+                value={glitchAberration}
+                min={0}
+                max={1}
+                step={0.1}
+                onChange={(e) => setGlitchAberration(Number(e.target.value))}
+              />
+              <span style={{ ...styles.label, marginLeft: 0 }}>{Math.round(glitchAberration * 100)}%</span>
+            </>
+          )}
+
           <label style={styles.checkbox}>
             <input
               type="checkbox"
@@ -309,6 +326,7 @@ function App() {
             enableKeyboard
             cascadeSubdivisions={cascadeSubdivisions}
             aspectRatio={parseAspectRatio(aspectRatio)}
+            glitchAberration={glitchAberration}
           />
         </div>
 
@@ -320,6 +338,9 @@ function App() {
           )}
           {selectedStyle === 'cube' && (
             <> | Duration: <span style={styles.code}>{cubeTransitionDuration}ms</span></>
+          )}
+          {selectedStyle === 'glitch' && (
+            <> | Aberration: <span style={styles.code}>{Math.round(glitchAberration * 100)}%</span></>
           )}
           {' '}| Use arrow keys or swipe to navigate
         </div>

@@ -9,6 +9,7 @@ interface GlitchTransitionProps {
   transitionDuration: number
   direction: 'next' | 'prev'
   aspectRatio?: number
+  aberrationIntensity?: number
 }
 
 const vertexShader = `
@@ -155,6 +156,7 @@ export function GlitchTransition({
   currentIndex,
   transitionDuration,
   aspectRatio = 3 / 2,
+  aberrationIntensity = 0.5,
 }: GlitchTransitionProps) {
   const { viewport } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
@@ -310,7 +312,8 @@ export function GlitchTransition({
       const flattenedCurve = Math.pow(sinProgress, 0.6)
 
       // Aberration ramps up, holds, then ramps down
-      const aberration = flattenedCurve * 0.15
+      // Scale aberration by intensity (0.15 is the base max, scaled by 0-1 intensity)
+      const aberration = flattenedCurve * 0.3 * aberrationIntensity
       shaderMaterial.uniforms.uAberrationAmount.value = aberration
 
       // Overlay intensity follows same flattened curve
