@@ -59,9 +59,9 @@ export function CascadeTransition({
   const groupRef = useRef<THREE.Group>(null)
   const cubeDataRef = useRef<CubeData[]>([])
   const texturesRef = useRef<THREE.Texture[]>([])
-  const prevIndexRef = useRef(currentIndex)
+  const displayedIndexRef = useRef(currentIndex) // The slide currently shown
+  const targetIndexRef = useRef(currentIndex) // The final target slide
   const animationProgressRef = useRef(0)
-  const targetProgressRef = useRef(0)
   const isAnimatingRef = useRef(false)
   const animationDirectionRef = useRef<'forward' | 'backward'>('forward')
   const [isReady, setIsReady] = useState(false)
@@ -223,29 +223,50 @@ export function CascadeTransition({
     }
   }, [isReady, gridCols, gridRows, cubeSize, gridWidth, gridHeight, currentIndex])
 
-  // Handle slide changes
+  // Handle slide changes - just update the target, animation loop handles the rest
   useEffect(() => {
-    if (currentIndex !== prevIndexRef.current && texturesRef.current.length > 0 && cubeDataRef.current.length > 0) {
+    if (currentIndex !== targetIndexRef.current && texturesRef.current.length > 0) {
+      targetIndexRef.current = currentIndex
+      // Determine overall direction based on target vs current displayed
       const dir = direction === 'next' ? 'forward' : 'backward'
       animationDirectionRef.current = dir
-
-      // Update side textures to show the target image
-      const targetTexture = texturesRef.current[currentIndex]
-      if (targetTexture) {
-        for (const cubeData of cubeDataRef.current) {
-          // Update the side faces that will be revealed during rotation
-          cubeData.faceMaterials[0].map = targetTexture // +X (right)
-          cubeData.faceMaterials[1].map = targetTexture // -X (left)
-          cubeData.faceMaterials[0].needsUpdate = true
-          cubeData.faceMaterials[1].needsUpdate = true
-        }
-      }
-
-      targetProgressRef.current = 1
-      isAnimatingRef.current = true
-      prevIndexRef.current = currentIndex
     }
   }, [currentIndex, direction])
+
+  // Helper to start animating to the next slide in sequence
+  const startNextTransition = () => {
+    if (cubeDataRef.current.length === 0 || texturesRef.current.length === 0) return false
+
+    const displayed = displayedIndexRef.current
+    const target = targetIndexRef.current
+
+    if (displayed === target) return false
+
+    // Determine which slide to animate to next (one step toward target)
+    const dir = animationDirectionRef.current
+    let nextIndex: number
+
+    if (dir === 'forward') {
+      nextIndex = (displayed + 1) % slides.length
+    } else {
+      nextIndex = (displayed - 1 + slides.length) % slides.length
+    }
+
+    // Update side textures to show the next image
+    const nextTexture = texturesRef.current[nextIndex]
+    if (nextTexture) {
+      for (const cubeData of cubeDataRef.current) {
+        cubeData.faceMaterials[0].map = nextTexture // +X (right)
+        cubeData.faceMaterials[1].map = nextTexture // -X (left)
+        cubeData.faceMaterials[0].needsUpdate = true
+        cubeData.faceMaterials[1].needsUpdate = true
+      }
+    }
+
+    animationProgressRef.current = 0
+    isAnimatingRef.current = true
+    return true
+  }
 
   // Animation loop
   useFrame((_, delta) => {
@@ -255,37 +276,54 @@ export function CascadeTransition({
       groupRef.current.scale.setScalar(scale)
     }
 
-    if (!isAnimatingRef.current || cubeDataRef.current.length === 0) {
-      return
+    // If not animating, check if we need to start a new transition
+    if (!isAnimatingRef.current) {
+      if (displayedIndexRef.current !== targetIndexRef.current) {
+        startNextTransition()
+      }
+      if (!isAnimatingRef.current) return
     }
+
+    if (cubeDataRef.current.length === 0) return
 
     const speed = ANIMATION_SPEED * (1000 / transitionDuration) * 0.8
 
-    // Animate towards target
-    if (animationProgressRef.current < targetProgressRef.current) {
-      animationProgressRef.current = Math.min(
-        animationProgressRef.current + delta * speed,
-        targetProgressRef.current
-      )
-    }
+    // Animate towards completion
+    animationProgressRef.current = Math.min(
+      animationProgressRef.current + delta * speed,
+      1
+    )
 
-    // Check if animation is complete
+    // Check if this single transition is complete
     if (animationProgressRef.current >= 1) {
-      // Complete transition - update all faces to current texture
-      const currentTexture = texturesRef.current[currentIndex]
-      if (currentTexture) {
+      // Move displayed index one step in the animation direction
+      const dir = animationDirectionRef.current
+      if (dir === 'forward') {
+        displayedIndexRef.current = (displayedIndexRef.current + 1) % slides.length
+      } else {
+        displayedIndexRef.current = (displayedIndexRef.current - 1 + slides.length) % slides.length
+      }
+
+      // Update all faces to the newly displayed texture
+      const newTexture = texturesRef.current[displayedIndexRef.current]
+      if (newTexture) {
         for (const cubeData of cubeDataRef.current) {
           cubeData.mesh.rotation.y = 0
           cubeData.mesh.position.z = cubeData.baseZ
           for (const mat of cubeData.faceMaterials) {
-            mat.map = currentTexture
+            mat.map = newTexture
             mat.needsUpdate = true
           }
         }
       }
+
       animationProgressRef.current = 0
-      targetProgressRef.current = 0
       isAnimatingRef.current = false
+
+      // Check if we need to continue to the next slide
+      if (displayedIndexRef.current !== targetIndexRef.current) {
+        startNextTransition()
+      }
       return
     }
 
@@ -323,13 +361,8 @@ export function CascadeTransition({
         const rotation =
           easedProgress * (Math.PI / 2) * (animDir === 'forward' ? 1 : -1)
         cubeData.mesh.rotation.y = rotation
-
-        // Z offset temporarily disabled
-        // const zOffset = Math.sin(cubeProgress * Math.PI) * CUBE_SIZE * 0.5
-        // cubeData.mesh.position.z = cubeData.baseZ + zOffset
       } else {
         cubeData.mesh.rotation.y = 0
-        // cubeData.mesh.position.z = cubeData.baseZ
       }
     }
   })
