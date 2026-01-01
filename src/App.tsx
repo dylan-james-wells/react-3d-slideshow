@@ -197,8 +197,7 @@ function App() {
       <header style={styles.header}>
         <h1 style={styles.title}>React 3D Slideshow</h1>
         <p style={styles.subtitle}>
-          A stunning React slideshow component with beautiful 3D transitions powered by Three.js.
-          Perfect for portfolios, galleries, and presentations.
+          A simple three.js slideshow component with experimental transitions.
         </p>
       </header>
 
