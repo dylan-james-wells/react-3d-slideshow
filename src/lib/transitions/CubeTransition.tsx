@@ -34,13 +34,11 @@ export function CubeTransition({
     progress: 0,
     rotationAxis: new THREE.Vector3(0, 1, 0),
     rotationAngle: Math.PI / 2, // Always 90 degrees, sign determines direction
-    targetSlideIndex: 0, // The slide we're animating to
-    rushMode: false, // When true, animate faster to catch up
   })
 
-  const prevIndexRef = useRef(currentIndex)
-  const lastDirectionRef = useRef(direction)
-  const pendingIndexRef = useRef<number | null>(null) // Queue for next slide if animation is running
+  const displayedIndexRef = useRef(currentIndex) // The slide currently shown
+  const targetIndexRef = useRef(currentIndex) // The final target slide
+  const animationDirectionRef = useRef<'forward' | 'backward'>('forward')
 
   const cubeSize = Math.min(viewport.width * 0.6, viewport.height * 0.6)
   const halfSize = cubeSize / 2
@@ -141,21 +139,37 @@ export function CubeTransition({
     pivotRef.current.position.set(0, 0, 0)
     pivotRef.current.rotation.set(0, 0, 0)
 
-    prevIndexRef.current = initialSlideRef.current
+    displayedIndexRef.current = initialSlideRef.current
+    targetIndexRef.current = initialSlideRef.current
     initializedRef.current = true
   }, [isReady, halfSize, setPlaneTexture])
 
-  // Helper to start animation for a specific slide transition
-  const startAnimation = useCallback((targetIndex: number, dir: 'next' | 'prev') => {
-    if (!currentPlaneRef.current || !nextPlaneRef.current || !pivotRef.current) return
+  // Helper to start animating to the next slide in sequence
+  const startNextTransition = useCallback(() => {
+    if (!currentPlaneRef.current || !nextPlaneRef.current || !pivotRef.current) return false
+    if (canvasesRef.current.length === 0) return false
+
+    const displayed = displayedIndexRef.current
+    const target = targetIndexRef.current
+
+    if (displayed === target) return false
 
     const state = animStateRef.current
-    const isForward = dir === 'next'
+    const dir = animationDirectionRef.current
+    const isForward = dir === 'forward'
+
+    // Calculate the next slide index (one step toward target)
+    let nextIndex: number
+    if (isForward) {
+      nextIndex = (displayed + 1) % slides.length
+    } else {
+      nextIndex = (displayed - 1 + slides.length) % slides.length
+    }
 
     // Determine rotation type based on the TARGET slide index
     // Even indices (0, 2, 4...) use horizontal rotation to arrive
     // Odd indices (1, 3, 5...) use vertical rotation to arrive
-    const targetIsEven = targetIndex % 2 === 0
+    const targetIsEven = nextIndex % 2 === 0
 
     // Pivot stays at origin (center of theoretical cube)
     pivotRef.current.position.set(0, 0, 0)
@@ -198,83 +212,78 @@ export function CubeTransition({
     }
 
     // Set textures
-    setPlaneTexture(currentPlaneRef.current, prevIndexRef.current)
-    setPlaneTexture(nextPlaneRef.current, targetIndex)
+    setPlaneTexture(currentPlaneRef.current, displayed)
+    setPlaneTexture(nextPlaneRef.current, nextIndex)
 
     nextPlaneRef.current.visible = true
-    lastDirectionRef.current = dir
 
     state.isAnimating = true
     state.progress = 0
-    state.targetSlideIndex = targetIndex
-  }, [halfSize, setPlaneTexture])
 
-  // Handle slide changes
+    return true
+  }, [halfSize, setPlaneTexture, slides.length])
+
+  // Handle slide changes - just update the target, animation loop handles the rest
   useEffect(() => {
-    if (currentIndex === prevIndexRef.current || !isReady) return
-    if (!initializedRef.current) return
-    if (!currentPlaneRef.current || !nextPlaneRef.current || !pivotRef.current) return
-
-    const state = animStateRef.current
-
-    // If animation is running, queue the new slide and enable rush mode
-    if (state.isAnimating) {
-      pendingIndexRef.current = currentIndex
-      state.rushMode = true
-      return
+    if (currentIndex !== targetIndexRef.current && isReady) {
+      targetIndexRef.current = currentIndex
+      // Determine overall direction based on target vs current displayed
+      const dir = direction === 'next' ? 'forward' : 'backward'
+      animationDirectionRef.current = dir
     }
-
-    startAnimation(currentIndex, direction)
-  }, [currentIndex, isReady, direction, startAnimation])
+  }, [currentIndex, direction, isReady])
 
   // Animation
   useFrame((_, delta) => {
     if (!pivotRef.current || !currentPlaneRef.current || !nextPlaneRef.current) return
     const state = animStateRef.current
 
-    if (state.isAnimating) {
-      // Speed up animation if there are pending slides (rush mode)
-      const rushMultiplier = state.rushMode ? 4 : 1
-      const speed = (1 / transitionDuration) * 1000 * rushMultiplier
-      state.progress = Math.min(state.progress + delta * speed, 1)
-      const t = easeInOutCubic(state.progress)
+    // If not animating, check if we need to start a new transition
+    if (!state.isAnimating) {
+      if (displayedIndexRef.current !== targetIndexRef.current) {
+        startNextTransition()
+      }
+      if (!state.isAnimating) return
+    }
 
-      // Rotate the pivot group
-      const angle = state.rotationAngle * t
-      if (state.rotationAxis.x === 1) {
-        pivotRef.current.rotation.set(angle, 0, 0)
+    const speed = (1 / transitionDuration) * 1000
+    state.progress = Math.min(state.progress + delta * speed, 1)
+    const t = easeInOutCubic(state.progress)
+
+    // Rotate the pivot group
+    const angle = state.rotationAngle * t
+    if (state.rotationAxis.x === 1) {
+      pivotRef.current.rotation.set(angle, 0, 0)
+    } else {
+      pivotRef.current.rotation.set(0, angle, 0)
+    }
+
+    if (state.progress >= 1) {
+      // Move displayed index one step in the animation direction
+      const dir = animationDirectionRef.current
+      if (dir === 'forward') {
+        displayedIndexRef.current = (displayedIndexRef.current + 1) % slides.length
       } else {
-        pivotRef.current.rotation.set(0, angle, 0)
+        displayedIndexRef.current = (displayedIndexRef.current - 1 + slides.length) % slides.length
       }
 
-      if (state.progress >= 1) {
-        state.isAnimating = false
-        state.rushMode = false
+      state.isAnimating = false
 
-        // Reset everything for next transition
-        pivotRef.current.position.set(0, 0, 0)
-        pivotRef.current.rotation.set(0, 0, 0)
+      // Reset everything for next transition
+      pivotRef.current.position.set(0, 0, 0)
+      pivotRef.current.rotation.set(0, 0, 0)
 
-        // Current plane shows new slide at front
-        currentPlaneRef.current.position.set(0, 0, halfSize)
-        currentPlaneRef.current.rotation.set(0, 0, 0)
-        setPlaneTexture(currentPlaneRef.current, state.targetSlideIndex)
+      // Current plane shows new slide at front
+      currentPlaneRef.current.position.set(0, 0, halfSize)
+      currentPlaneRef.current.rotation.set(0, 0, 0)
+      setPlaneTexture(currentPlaneRef.current, displayedIndexRef.current)
 
-        // Hide next plane
-        nextPlaneRef.current.visible = false
+      // Hide next plane
+      nextPlaneRef.current.visible = false
 
-        // Update prevIndexRef now that animation is complete
-        prevIndexRef.current = state.targetSlideIndex
-
-        // If there's a pending slide, start animating to it
-        if (pendingIndexRef.current !== null && pendingIndexRef.current !== state.targetSlideIndex) {
-          const pendingIndex = pendingIndexRef.current
-          pendingIndexRef.current = null
-          // Determine direction based on index difference
-          const dir = pendingIndex > state.targetSlideIndex ? 'next' : 'prev'
-          state.rushMode = true // Keep rushing if more pending
-          startAnimation(pendingIndex, dir)
-        }
+      // Check if we need to continue to the next slide
+      if (displayedIndexRef.current !== targetIndexRef.current) {
+        startNextTransition()
       }
     }
   })
