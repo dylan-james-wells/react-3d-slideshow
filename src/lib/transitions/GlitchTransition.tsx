@@ -8,6 +8,7 @@ interface GlitchTransitionProps {
   currentIndex: number
   transitionDuration: number
   direction: 'next' | 'prev'
+  aspectRatio?: number
 }
 
 const vertexShader = `
@@ -59,6 +60,13 @@ const fragmentShader = `
 
   void main() {
     vec2 uv = vUv;
+
+    // When not animating, just show the texture directly
+    if (uAberrationAmount < 0.001) {
+      vec4 texColor = texture2D(uCurrentTexture, uv);
+      gl_FragColor = texColor;
+      return;
+    }
 
     // Chromatic aberration offset - increases toward edges
     vec2 center = uv - 0.5;
@@ -130,6 +138,7 @@ export function GlitchTransition({
   slides,
   currentIndex,
   transitionDuration,
+  aspectRatio = 3 / 2,
 }: GlitchTransitionProps) {
   const { viewport } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
@@ -342,8 +351,19 @@ export function GlitchTransition({
     }
   })
 
-  const planeWidth = Math.min(viewport.width * 0.8, viewport.height * 0.8 * (16 / 9))
-  const planeHeight = planeWidth * (9 / 16)
+  // Calculate plane dimensions based on aspect ratio
+  const maxWidth = viewport.width * 0.8
+  const maxHeight = viewport.height * 0.8
+  let planeWidth: number
+  let planeHeight: number
+
+  if (maxWidth / aspectRatio <= maxHeight) {
+    planeWidth = maxWidth
+    planeHeight = maxWidth / aspectRatio
+  } else {
+    planeHeight = maxHeight
+    planeWidth = maxHeight * aspectRatio
+  }
 
   if (!isReady) {
     return (
