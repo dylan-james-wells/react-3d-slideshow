@@ -34,6 +34,16 @@ const fragmentShader = `
 
   varying vec2 vUv;
 
+  // sRGB to Linear conversion (for reading textures)
+  vec3 sRGBToLinear(vec3 srgb) {
+    return pow(srgb, vec3(2.2));
+  }
+
+  // Linear to sRGB conversion (for output)
+  vec3 linearToSRGB(vec3 linear) {
+    return pow(linear, vec3(1.0 / 2.2));
+  }
+
   // Hue rotation function
   vec3 hueRotate(vec3 color, float hue) {
     float angle = hue * 6.28318530718; // Convert to radians (0-1 maps to 0-2PI)
@@ -61,10 +71,10 @@ const fragmentShader = `
   void main() {
     vec2 uv = vUv;
 
-    // When not animating, just show the texture directly
+    // When not animating, just show the texture directly (no processing)
     if (uAberrationAmount < 0.001) {
-      vec4 texColor = texture2D(uCurrentTexture, uv);
-      gl_FragColor = texColor;
+      gl_FragColor = texture2D(uCurrentTexture, uv);
+      #include <colorspace_fragment>
       return;
     }
 
@@ -131,6 +141,9 @@ const fragmentShader = `
     finalColor = mix(finalColor, screen2, uOverlayIntensity * 0.4);
 
     gl_FragColor = vec4(finalColor, 1.0);
+
+    // Apply sRGB encoding to match Three.js output color space
+    #include <colorspace_fragment>
   }
 `
 
@@ -197,7 +210,7 @@ export function GlitchTransition({
 
   // Create shader material
   const shaderMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
+    const material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
@@ -213,6 +226,7 @@ export function GlitchTransition({
         uHueShift2: { value: 0 },
       },
     })
+    return material
   }, [])
 
   // Update textures when ready
