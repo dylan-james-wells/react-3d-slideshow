@@ -8,6 +8,33 @@ interface CubeTransitionProps {
   currentIndex: number
   transitionDuration: number
   direction: 'next' | 'prev'
+  aspectRatio?: number
+  fullscreen?: boolean
+}
+
+interface TextureData {
+  texture: THREE.Texture
+  imageAspect: number
+}
+
+// Calculate UV scale and offset for "cover" behavior (crop to fill)
+const calculateCoverUV = (imageAspect: number, targetAspect: number) => {
+  let scaleU = 1
+  let scaleV = 1
+  let offsetU = 0
+  let offsetV = 0
+
+  if (imageAspect > targetAspect) {
+    // Image is wider than target - crop sides
+    scaleU = targetAspect / imageAspect
+    offsetU = (1 - scaleU) / 2
+  } else {
+    // Image is taller than target - crop top/bottom
+    scaleV = imageAspect / targetAspect
+    offsetV = (1 - scaleV) / 2
+  }
+
+  return { scaleU, scaleV, offsetU, offsetV }
 }
 
 const easeInOutCubic = (t: number): number => {
@@ -19,11 +46,15 @@ export function CubeTransition({
   currentIndex,
   transitionDuration,
   direction,
+  aspectRatio: _aspectRatio = 3 / 2,
+  fullscreen = false,
 }: CubeTransitionProps) {
+  // Note: aspectRatio is accepted for API consistency but cube transition uses square faces
+  void _aspectRatio
   const { viewport } = useThree()
   const pivotRef = useRef<THREE.Group>(null)
   const [isReady, setIsReady] = useState(false)
-  const canvasesRef = useRef<HTMLCanvasElement[]>([])
+  const textureDataRef = useRef<TextureData[]>([])
 
   // Two planes that form an "L" shape, rotating around their shared edge
   const currentPlaneRef = useRef<THREE.Mesh>(null)
@@ -40,86 +71,112 @@ export function CubeTransition({
   const targetIndexRef = useRef(currentIndex) // The final target slide
   const animationDirectionRef = useRef<'forward' | 'backward'>('forward')
 
-  const cubeSize = Math.min(viewport.width * 0.6, viewport.height * 0.6)
+  // Calculate cube dimensions based on aspect ratio
+  // The cube rotates so we need square faces, sized to fit the content
+  const getCubeSize = () => {
+    if (fullscreen) {
+      // Fill viewport - use the smaller dimension
+      return Math.min(viewport.width, viewport.height)
+    }
+    // Fit within 60% of viewport
+    return Math.min(viewport.width * 0.6, viewport.height * 0.6)
+  }
+
+  const cubeSize = getCubeSize()
   const halfSize = cubeSize / 2
 
-  // Load all images
+  // Load all textures with image aspect ratio information
   useEffect(() => {
-    const loadImage = (src: string): Promise<HTMLCanvasElement> => {
-      return new Promise((resolve) => {
-        const img = new Image()
-        img.crossOrigin = 'anonymous'
-        img.onload = () => {
-          const size = Math.min(img.width, img.height)
+    const loadPromises = slides.map((slide) =>
+      new Promise<TextureData>((resolve) => {
+        if (slide.image) {
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          img.onload = () => {
+            const texture = new THREE.Texture(img)
+            texture.needsUpdate = true
+            texture.colorSpace = THREE.SRGBColorSpace
+            resolve({
+              texture,
+              imageAspect: img.width / img.height,
+            })
+          }
+          img.onerror = () => {
+            const canvas = document.createElement('canvas')
+            canvas.width = 512
+            canvas.height = 512
+            const ctx = canvas.getContext('2d')!
+            ctx.fillStyle = '#333'
+            ctx.fillRect(0, 0, 512, 512)
+            const texture = new THREE.CanvasTexture(canvas)
+            texture.colorSpace = THREE.SRGBColorSpace
+            resolve({ texture, imageAspect: 1 })
+          }
+          img.src = slide.image
+        } else {
           const canvas = document.createElement('canvas')
           canvas.width = 512
           canvas.height = 512
           const ctx = canvas.getContext('2d')!
-          const offsetX = (img.width - size) / 2
-          const offsetY = (img.height - size) / 2
-          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, 512, 512)
-          resolve(canvas)
-        }
-        img.onerror = () => {
-          const canvas = document.createElement('canvas')
-          canvas.width = 512
-          canvas.height = 512
-          const ctx = canvas.getContext('2d')!
-          ctx.fillStyle = '#333'
+          ctx.fillStyle = slide.backgroundColor || '#333'
           ctx.fillRect(0, 0, 512, 512)
-          resolve(canvas)
+          const texture = new THREE.CanvasTexture(canvas)
+          texture.colorSpace = THREE.SRGBColorSpace
+          resolve({ texture, imageAspect: 1 })
         }
-        img.src = src
       })
-    }
+    )
 
-    const createFallback = (color: string): HTMLCanvasElement => {
-      const canvas = document.createElement('canvas')
-      canvas.width = 512
-      canvas.height = 512
-      const ctx = canvas.getContext('2d')!
-      ctx.fillStyle = color
-      ctx.fillRect(0, 0, 512, 512)
-      return canvas
-    }
-
-    Promise.all(
-      slides.map((slide) =>
-        slide.image ? loadImage(slide.image) : Promise.resolve(createFallback(slide.backgroundColor || '#333'))
-      )
-    ).then((canvases) => {
-      canvasesRef.current = canvases
+    Promise.all(loadPromises).then((textureData) => {
+      textureDataRef.current = textureData
       setIsReady(true)
     })
+
+    return () => {
+      textureDataRef.current.forEach((td) => td.texture.dispose())
+      textureDataRef.current = []
+    }
   }, [slides])
 
-  // Create texture from canvas
-  const createTexture = useCallback((slideIndex: number): THREE.CanvasTexture => {
-    const canvas = canvasesRef.current[slideIndex]
-    if (!canvas) {
-      const fallback = document.createElement('canvas')
-      fallback.width = 512
-      fallback.height = 512
-      const texture = new THREE.CanvasTexture(fallback)
-      texture.colorSpace = THREE.SRGBColorSpace
-      return texture
-    }
+  // Apply UV transformation for cover behavior on a plane's geometry
+  const applyPlaneUVs = useCallback((plane: THREE.Mesh | null, imageAspect: number) => {
+    if (!plane) return
+    const geometry = plane.geometry as THREE.PlaneGeometry
+    const uvAttribute = geometry.getAttribute('uv')
+    const uvArray = uvAttribute.array as Float32Array
 
-    const texture = new THREE.CanvasTexture(canvas)
-    texture.colorSpace = THREE.SRGBColorSpace
-    return texture
+    const { scaleU, scaleV, offsetU, offsetV } = calculateCoverUV(imageAspect, 1) // 1:1 target for square cube faces
+
+    // Plane geometry has 4 vertices, 2 UV coords each
+    // Default UVs are: (0,1), (1,1), (0,0), (1,0)
+    uvArray[0] = offsetU
+    uvArray[1] = offsetV + scaleV
+    uvArray[2] = offsetU + scaleU
+    uvArray[3] = offsetV + scaleV
+    uvArray[4] = offsetU
+    uvArray[5] = offsetV
+    uvArray[6] = offsetU + scaleU
+    uvArray[7] = offsetV
+
+    uvAttribute.needsUpdate = true
   }, [])
 
-  // Set texture on a plane
+  // Set texture on a plane with cover UV behavior
   const setPlaneTexture = useCallback((plane: THREE.Mesh | null, slideIndex: number) => {
     if (!plane) return
+    const textureData = textureDataRef.current[slideIndex]
+    if (!textureData) return
+
     const material = plane.material as THREE.MeshBasicMaterial
-    if (material.map) {
-      material.map.dispose()
+    if (material.map && material.map !== textureData.texture) {
+      // Don't dispose shared textures
     }
-    material.map = createTexture(slideIndex)
+    material.map = textureData.texture
     material.needsUpdate = true
-  }, [createTexture])
+
+    // Apply cover UVs
+    applyPlaneUVs(plane, textureData.imageAspect)
+  }, [applyPlaneUVs])
 
   // Track initialization
   const initializedRef = useRef(false)
@@ -147,7 +204,7 @@ export function CubeTransition({
   // Helper to start animating to the next slide in sequence
   const startNextTransition = useCallback(() => {
     if (!currentPlaneRef.current || !nextPlaneRef.current || !pivotRef.current) return false
-    if (canvasesRef.current.length === 0) return false
+    if (textureDataRef.current.length === 0) return false
 
     const displayed = displayedIndexRef.current
     const target = targetIndexRef.current

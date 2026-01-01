@@ -304,16 +304,18 @@ function App() {
                 onChange={(e) => setGlitchGrain(Number(e.target.value))}
               />
               <span style={{ ...styles.label, marginLeft: 0 }}>{Math.round(glitchGrain * 100)}%</span>
-
-              <label style={styles.checkbox}>
-                <input
-                  type="checkbox"
-                  checked={fullscreen}
-                  onChange={(e) => setFullscreen(e.target.checked)}
-                />
-                Fullscreen (Cover)
-              </label>
             </>
+          )}
+
+          {(selectedStyle === 'cascade' || selectedStyle === 'glitch' || selectedStyle === 'cube') && (
+            <label style={styles.checkbox}>
+              <input
+                type="checkbox"
+                checked={fullscreen}
+                onChange={(e) => setFullscreen(e.target.checked)}
+              />
+              Fullscreen (Cover)
+            </label>
           )}
 
           <label style={styles.checkbox}>

@@ -10,6 +10,7 @@ interface CascadeTransitionProps {
   direction: 'next' | 'prev'
   minTiles?: number
   aspectRatio?: number
+  fullscreen?: boolean
 }
 
 // Calculate grid dimensions for square tiles
@@ -79,6 +80,7 @@ export function CascadeTransition({
   direction,
   minTiles = 10,
   aspectRatio = 3 / 2,
+  fullscreen = false,
 }: CascadeTransitionProps) {
   const { viewport } = useThree()
   const groupRef = useRef<THREE.Group>(null)
@@ -92,8 +94,11 @@ export function CascadeTransition({
   const [isReady, setIsReady] = useState(false)
   const initializedRef = useRef(false)
 
+  // In fullscreen mode, use viewport aspect ratio
+  const effectiveAspectRatio = fullscreen ? viewport.width / viewport.height : aspectRatio
+
   // Calculate grid dimensions for square tiles
-  const { rows: gridRows, cols: gridCols } = calculateGridDimensions(aspectRatio, minTiles)
+  const { rows: gridRows, cols: gridCols } = calculateGridDimensions(effectiveAspectRatio, minTiles)
 
   // Calculate cube size so total grid size remains constant regardless of subdivisions
   // Grid width = gridCols * cubeSize, we want grid width to equal GRID_BASE_SIZE * aspectRatio
@@ -101,7 +106,7 @@ export function CascadeTransition({
   const cubeSize = GRID_BASE_SIZE / gridRows
 
   // Fixed grid dimensions based on aspect ratio
-  const gridWidth = GRID_BASE_SIZE * aspectRatio
+  const gridWidth = GRID_BASE_SIZE * effectiveAspectRatio
   const gridHeight = GRID_BASE_SIZE
 
   // Reset initialization when grid parameters change
@@ -121,13 +126,20 @@ export function CascadeTransition({
       cubeDataRef.current = []
       initializedRef.current = false
     }
-  }, [aspectRatio, minTiles, gridRows, gridCols])
+  }, [aspectRatio, minTiles, gridRows, gridCols, fullscreen])
 
   // Calculate the scale to fit the viewport
   const getScale = () => {
     // Use viewport dimensions (in Three.js units at z=0)
     const viewportWidth = viewport.width
     const viewportHeight = viewport.height
+
+    if (fullscreen) {
+      // In fullscreen mode, scale to fill the entire viewport
+      const scaleX = viewportWidth / gridWidth
+      const scaleY = viewportHeight / gridHeight
+      return Math.max(scaleX, scaleY)
+    }
 
     // Scale to fit with some padding
     const scaleX = (viewportWidth * 0.8) / gridWidth
@@ -191,7 +203,7 @@ export function CascadeTransition({
 
   // Helper to calculate UV coordinates for a grid cell with cover behavior
   const calculateCellUV = (row: number, col: number, imageAspect: number) => {
-    const { scaleU, scaleV, offsetU, offsetV } = calculateCoverUV(imageAspect, aspectRatio)
+    const { scaleU, scaleV, offsetU, offsetV } = calculateCoverUV(imageAspect, effectiveAspectRatio)
 
     // Calculate base UV for this cell in the grid (0-1 range)
     const cellUMin = col / gridCols

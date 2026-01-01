@@ -57,14 +57,15 @@ export function Scene({
             {...props}
             minTiles={cascadeMinTiles}
             aspectRatio={aspectRatio}
+            fullscreen={fullscreen}
           />
         )
       case 'cube':
-        return <CubeTransition {...props} />
+        return <CubeTransition {...props} aspectRatio={aspectRatio} fullscreen={fullscreen} />
       case 'glitch':
         return <GlitchTransition {...props} aspectRatio={aspectRatio} aberrationIntensity={glitchAberration} scanlinesIntensity={glitchScanlines} grainIntensity={glitchGrain} fullscreen={fullscreen} />
       default:
-        return <CascadeTransition {...props} minTiles={cascadeMinTiles} aspectRatio={aspectRatio} />
+        return <CascadeTransition {...props} minTiles={cascadeMinTiles} aspectRatio={aspectRatio} fullscreen={fullscreen} />
     }
   }
 
