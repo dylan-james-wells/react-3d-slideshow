@@ -1,10 +1,10 @@
 # React 3D Slideshow
 
-[**Live Demo**](https://dylan-james-wells.github.io/react-3d-slideshow/)
-
 > **Warning**: This library is a work in progress and has not been thoroughly tested. Use at your own risk in production environments.
 
 A React slideshow component with 3D transitions powered by Three.js and @react-three/fiber.
+
+[**Live Demo**](https://dylan-james-wells.github.io/react-3d-slideshow/)
 
 ## Installation
 
