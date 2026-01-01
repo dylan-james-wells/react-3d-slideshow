@@ -24,6 +24,7 @@ const fragmentShader = `
   uniform sampler2D uCurrentTexture;
   uniform sampler2D uNextTexture;
   uniform float uProgress;
+  uniform float uShowNext;
   uniform float uAberrationAmount;
   uniform float uTime;
   uniform float uOverlayIntensity;
@@ -33,16 +34,6 @@ const fragmentShader = `
   uniform float uHueShift2;
 
   varying vec2 vUv;
-
-  // sRGB to Linear conversion (for reading textures)
-  vec3 sRGBToLinear(vec3 srgb) {
-    return pow(srgb, vec3(2.2));
-  }
-
-  // Linear to sRGB conversion (for output)
-  vec3 linearToSRGB(vec3 linear) {
-    return pow(linear, vec3(1.0 / 2.2));
-  }
 
   // Hue rotation function
   vec3 hueRotate(vec3 color, float hue) {
@@ -94,8 +85,9 @@ const fragmentShader = `
     float nextB = texture2D(uNextTexture, uv - aberrationOffset).b;
     vec3 nextColor = vec3(nextR, nextG, nextB);
 
-    // Crossfade between textures (base layer)
-    vec3 baseColor = mix(currentColor, nextColor, uProgress);
+    // Choose which texture to show based on uShowNext (0 = current, 1 = next)
+    // The swap happens at peak intensity (no crossfade, instant switch)
+    vec3 baseColor = uShowNext < 0.5 ? currentColor : nextColor;
 
     // === Overlay Layers with heavy aberration and hue rotation ===
     // These create the stretched, ghostly duplicate effect
@@ -108,10 +100,18 @@ const fragmentShader = `
     float layer1Dist = length(layer1Center);
     vec2 layer1AberrationOffset = layer1Center * layer1Dist * heavyAberration;
 
-    float layer1R = texture2D(uCurrentTexture, layer1Uv + layer1AberrationOffset).r;
-    float layer1G = texture2D(uCurrentTexture, layer1Uv).g;
-    float layer1B = texture2D(uCurrentTexture, layer1Uv - layer1AberrationOffset).b;
-    vec3 layer1Color = vec3(layer1R, layer1G, layer1B);
+    // Sample from active texture for layer 1
+    float layer1CurrentR = texture2D(uCurrentTexture, layer1Uv + layer1AberrationOffset).r;
+    float layer1CurrentG = texture2D(uCurrentTexture, layer1Uv).g;
+    float layer1CurrentB = texture2D(uCurrentTexture, layer1Uv - layer1AberrationOffset).b;
+    vec3 layer1CurrentColor = vec3(layer1CurrentR, layer1CurrentG, layer1CurrentB);
+
+    float layer1NextR = texture2D(uNextTexture, layer1Uv + layer1AberrationOffset).r;
+    float layer1NextG = texture2D(uNextTexture, layer1Uv).g;
+    float layer1NextB = texture2D(uNextTexture, layer1Uv - layer1AberrationOffset).b;
+    vec3 layer1NextColor = vec3(layer1NextR, layer1NextG, layer1NextB);
+
+    vec3 layer1Color = uShowNext < 0.5 ? layer1CurrentColor : layer1NextColor;
     layer1Color = hueRotate(layer1Color, uHueShift1);
 
     // Layer 2 - different offset and aberration
@@ -120,10 +120,18 @@ const fragmentShader = `
     float layer2Dist = length(layer2Center);
     vec2 layer2AberrationOffset = layer2Center * layer2Dist * heavyAberration;
 
-    float layer2R = texture2D(uNextTexture, layer2Uv + layer2AberrationOffset).r;
-    float layer2G = texture2D(uNextTexture, layer2Uv).g;
-    float layer2B = texture2D(uNextTexture, layer2Uv - layer2AberrationOffset).b;
-    vec3 layer2Color = vec3(layer2R, layer2G, layer2B);
+    // Sample from active texture for layer 2
+    float layer2CurrentR = texture2D(uCurrentTexture, layer2Uv + layer2AberrationOffset).r;
+    float layer2CurrentG = texture2D(uCurrentTexture, layer2Uv).g;
+    float layer2CurrentB = texture2D(uCurrentTexture, layer2Uv - layer2AberrationOffset).b;
+    vec3 layer2CurrentColor = vec3(layer2CurrentR, layer2CurrentG, layer2CurrentB);
+
+    float layer2NextR = texture2D(uNextTexture, layer2Uv + layer2AberrationOffset).r;
+    float layer2NextG = texture2D(uNextTexture, layer2Uv).g;
+    float layer2NextB = texture2D(uNextTexture, layer2Uv - layer2AberrationOffset).b;
+    vec3 layer2NextColor = vec3(layer2NextR, layer2NextG, layer2NextB);
+
+    vec3 layer2Color = uShowNext < 0.5 ? layer2CurrentColor : layer2NextColor;
     layer2Color = hueRotate(layer2Color, uHueShift2);
 
     // Apply hard light blend mode
@@ -212,6 +220,7 @@ export function GlitchTransition({
         uCurrentTexture: { value: null },
         uNextTexture: { value: null },
         uProgress: { value: 0 },
+        uShowNext: { value: 0 },
         uAberrationAmount: { value: 0 },
         uTime: { value: 0 },
         uOverlayIntensity: { value: 0 },
@@ -289,6 +298,12 @@ export function GlitchTransition({
       shaderMaterial.uniforms.uProgress.value = progress
       shaderMaterial.uniforms.uTime.value = time
 
+      // Phase 1 (0-0.5): Effects ramp up on current slide
+      // Phase 2 (0.5-1): Effects ramp down on next slide
+      // Swap happens at progress = 0.5
+      const showNext = progress >= 0.5 ? 1 : 0
+      shaderMaterial.uniforms.uShowNext.value = showNext
+
       // Aberration ramps up to middle, then ramps down
       const aberration = Math.sin(progress * Math.PI) * 0.15
       shaderMaterial.uniforms.uAberrationAmount.value = aberration
@@ -339,6 +354,7 @@ export function GlitchTransition({
         // Set both textures to the current one
         shaderMaterial.uniforms.uCurrentTexture.value = textures[currentIndex]
         shaderMaterial.uniforms.uNextTexture.value = textures[currentIndex]
+        shaderMaterial.uniforms.uShowNext.value = 0
         shaderMaterial.uniforms.uAberrationAmount.value = 0
         shaderMaterial.uniforms.uOverlayIntensity.value = 0
         shaderMaterial.uniforms.uLayer1Offset.value.set(0, 0)
