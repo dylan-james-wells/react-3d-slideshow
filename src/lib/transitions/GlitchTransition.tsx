@@ -206,6 +206,31 @@ const fragmentShader = `
   }
 `
 
+interface TextureData {
+  texture: THREE.Texture
+  imageAspect: number
+}
+
+// Calculate UV scale and offset for "cover" behavior (crop to fill)
+const calculateCoverUV = (imageAspect: number, targetAspect: number) => {
+  let scaleX = 1
+  let scaleY = 1
+  let offsetX = 0
+  let offsetY = 0
+
+  if (imageAspect > targetAspect) {
+    // Image is wider than target - crop sides
+    scaleX = targetAspect / imageAspect
+    offsetX = (1 - scaleX) / 2
+  } else {
+    // Image is taller than target - crop top/bottom
+    scaleY = imageAspect / targetAspect
+    offsetY = (1 - scaleY) / 2
+  }
+
+  return { scaleX, scaleY, offsetX, offsetY }
+}
+
 export function GlitchTransition({
   slides,
   currentIndex,
@@ -219,38 +244,41 @@ export function GlitchTransition({
   const { viewport } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
-  const [textures, setTextures] = useState<THREE.Texture[]>([])
+  const [textureData, setTextureData] = useState<TextureData[]>([])
   const [isReady, setIsReady] = useState(false)
 
   const prevIndexRef = useRef(currentIndex)
   const progressRef = useRef(0)
   const isAnimatingRef = useRef(false)
 
-  // Load all textures
+  // Load all textures with image aspect ratio information
   useEffect(() => {
-    const loader = new THREE.TextureLoader()
     const loadPromises = slides.map((slide) => {
-      return new Promise<THREE.Texture>((resolve) => {
+      return new Promise<TextureData>((resolve) => {
         if (slide.image) {
-          loader.load(
-            slide.image,
-            (texture) => {
-              texture.colorSpace = THREE.SRGBColorSpace
-              resolve(texture)
-            },
-            undefined,
-            () => {
-              const canvas = document.createElement('canvas')
-              canvas.width = 512
-              canvas.height = 512
-              const ctx = canvas.getContext('2d')!
-              ctx.fillStyle = slide.backgroundColor || '#333'
-              ctx.fillRect(0, 0, 512, 512)
-              const fallback = new THREE.CanvasTexture(canvas)
-              fallback.colorSpace = THREE.SRGBColorSpace
-              resolve(fallback)
-            }
-          )
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          img.onload = () => {
+            const texture = new THREE.Texture(img)
+            texture.needsUpdate = true
+            texture.colorSpace = THREE.SRGBColorSpace
+            resolve({
+              texture,
+              imageAspect: img.width / img.height,
+            })
+          }
+          img.onerror = () => {
+            const canvas = document.createElement('canvas')
+            canvas.width = 512
+            canvas.height = 512
+            const ctx = canvas.getContext('2d')!
+            ctx.fillStyle = slide.backgroundColor || '#333'
+            ctx.fillRect(0, 0, 512, 512)
+            const fallback = new THREE.CanvasTexture(canvas)
+            fallback.colorSpace = THREE.SRGBColorSpace
+            resolve({ texture: fallback, imageAspect: 1 })
+          }
+          img.src = slide.image
         } else {
           const canvas = document.createElement('canvas')
           canvas.width = 512
@@ -260,13 +288,13 @@ export function GlitchTransition({
           ctx.fillRect(0, 0, 512, 512)
           const fallback = new THREE.CanvasTexture(canvas)
           fallback.colorSpace = THREE.SRGBColorSpace
-          resolve(fallback)
+          resolve({ texture: fallback, imageAspect: 1 })
         }
       })
     })
 
     Promise.all(loadPromises).then((loaded) => {
-      setTextures(loaded)
+      setTextureData(loaded)
       setIsReady(true)
     })
   }, [slides])
@@ -299,28 +327,28 @@ export function GlitchTransition({
 
   // Update textures when ready
   useEffect(() => {
-    if (!isReady || textures.length === 0) return
+    if (!isReady || textureData.length === 0) return
 
-    shaderMaterial.uniforms.uCurrentTexture.value = textures[currentIndex]
-    shaderMaterial.uniforms.uNextTexture.value = textures[currentIndex]
+    shaderMaterial.uniforms.uCurrentTexture.value = textureData[currentIndex].texture
+    shaderMaterial.uniforms.uNextTexture.value = textureData[currentIndex].texture
     prevIndexRef.current = currentIndex
-  }, [isReady, textures, shaderMaterial])
+  }, [isReady, textureData, shaderMaterial])
 
   // Handle slide changes
   useEffect(() => {
-    if (!isReady || textures.length === 0) return
+    if (!isReady || textureData.length === 0) return
     if (currentIndex === prevIndexRef.current) return
 
     // Set up transition
-    shaderMaterial.uniforms.uCurrentTexture.value = textures[prevIndexRef.current]
-    shaderMaterial.uniforms.uNextTexture.value = textures[currentIndex]
+    shaderMaterial.uniforms.uCurrentTexture.value = textureData[prevIndexRef.current].texture
+    shaderMaterial.uniforms.uNextTexture.value = textureData[currentIndex].texture
     shaderMaterial.uniforms.uProgress.value = 0
     shaderMaterial.uniforms.uAberrationAmount.value = 0
 
     progressRef.current = 0
     isAnimatingRef.current = true
     prevIndexRef.current = currentIndex
-  }, [currentIndex, isReady, textures, shaderMaterial])
+  }, [currentIndex, isReady, textureData, shaderMaterial])
 
   // Track time and glitch state for erratic movement
   const timeRef = useRef(0)
@@ -428,8 +456,8 @@ export function GlitchTransition({
       if (progressRef.current >= 1) {
         isAnimatingRef.current = false
         // Set both textures to the current one
-        shaderMaterial.uniforms.uCurrentTexture.value = textures[currentIndex]
-        shaderMaterial.uniforms.uNextTexture.value = textures[currentIndex]
+        shaderMaterial.uniforms.uCurrentTexture.value = textureData[currentIndex].texture
+        shaderMaterial.uniforms.uNextTexture.value = textureData[currentIndex].texture
         shaderMaterial.uniforms.uShowNext.value = 0
         shaderMaterial.uniforms.uAberrationAmount.value = 0
         shaderMaterial.uniforms.uOverlayIntensity.value = 0
@@ -460,24 +488,23 @@ export function GlitchTransition({
   let uvScale = { x: 1, y: 1 }
   let uvOffset = { x: 0, y: 0 }
 
+  // Get the current image's aspect ratio for cover UV calculation
+  const currentImageAspect = textureData.length > 0 ? textureData[currentIndex]?.imageAspect ?? aspectRatio : aspectRatio
+
   if (fullscreen) {
     // In fullscreen mode, fill the entire viewport
     planeWidth = viewport.width
     planeHeight = viewport.height
 
-    // Calculate UV scaling to achieve "cover" behavior
-    // The texture should fill the plane while maintaining aspect ratio
+    // Calculate UV scaling to achieve "cover" behavior for viewport
     const viewportAspect = viewport.width / viewport.height
 
-    if (viewportAspect > aspectRatio) {
-      // Viewport is wider than content - scale height, crop top/bottom
-      uvScale.y = aspectRatio / viewportAspect
-      uvOffset.y = (1 - uvScale.y) / 2
-    } else {
-      // Viewport is taller than content - scale width, crop left/right
-      uvScale.x = viewportAspect / aspectRatio
-      uvOffset.x = (1 - uvScale.x) / 2
-    }
+    // First, apply cover for the source image to the target aspect ratio
+    const imageCover = calculateCoverUV(currentImageAspect, viewportAspect)
+    uvScale.x = imageCover.scaleX
+    uvScale.y = imageCover.scaleY
+    uvOffset.x = imageCover.offsetX
+    uvOffset.y = imageCover.offsetY
   } else {
     // Standard mode: fit within 80% of viewport
     const maxWidth = viewport.width * 0.8
@@ -490,6 +517,13 @@ export function GlitchTransition({
       planeHeight = maxHeight
       planeWidth = maxHeight * aspectRatio
     }
+
+    // Apply cover UV for the source image to crop it to the target aspect ratio
+    const imageCover = calculateCoverUV(currentImageAspect, aspectRatio)
+    uvScale.x = imageCover.scaleX
+    uvScale.y = imageCover.scaleY
+    uvOffset.x = imageCover.offsetX
+    uvOffset.y = imageCover.offsetY
   }
 
   // Update UV uniforms

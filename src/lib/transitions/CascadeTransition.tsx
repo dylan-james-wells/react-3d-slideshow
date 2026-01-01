@@ -39,12 +39,37 @@ const easeInOutCubic = (t: number): number => {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
+// Calculate UV scale and offset for "cover" behavior (crop to fill)
+const calculateCoverUV = (imageAspect: number, targetAspect: number) => {
+  let scaleU = 1
+  let scaleV = 1
+  let offsetU = 0
+  let offsetV = 0
+
+  if (imageAspect > targetAspect) {
+    // Image is wider than target - crop sides
+    scaleU = targetAspect / imageAspect
+    offsetU = (1 - scaleU) / 2
+  } else {
+    // Image is taller than target - crop top/bottom
+    scaleV = imageAspect / targetAspect
+    offsetV = (1 - scaleV) / 2
+  }
+
+  return { scaleU, scaleV, offsetU, offsetV }
+}
+
 interface CubeData {
   mesh: THREE.Mesh
   row: number
   col: number
   baseZ: number
   faceMaterials: THREE.MeshBasicMaterial[]
+}
+
+interface TextureData {
+  texture: THREE.Texture
+  imageAspect: number // width / height of the source image
 }
 
 export function CascadeTransition({
@@ -58,7 +83,7 @@ export function CascadeTransition({
   const { viewport } = useThree()
   const groupRef = useRef<THREE.Group>(null)
   const cubeDataRef = useRef<CubeData[]>([])
-  const texturesRef = useRef<THREE.Texture[]>([])
+  const textureDataRef = useRef<TextureData[]>([])
   const displayedIndexRef = useRef(currentIndex) // The slide currently shown
   const targetIndexRef = useRef(currentIndex) // The final target slide
   const animationProgressRef = useRef(0)
@@ -111,34 +136,35 @@ export function CascadeTransition({
     return Math.min(scaleX, scaleY)
   }
 
-  // Load textures
+  // Load textures with image aspect ratio information
   useEffect(() => {
-    const loader = new THREE.TextureLoader()
-    loader.crossOrigin = 'anonymous'
-
     const loadPromises = slides.map(
       (slide) =>
-        new Promise<THREE.Texture>((resolve) => {
+        new Promise<TextureData>((resolve) => {
           if (slide.image) {
-            loader.load(
-              slide.image,
-              (texture) => {
-                texture.colorSpace = THREE.SRGBColorSpace
-                resolve(texture)
-              },
-              undefined,
-              () => {
-                // On error, create a placeholder
-                const canvas = document.createElement('canvas')
-                canvas.width = 64
-                canvas.height = 64
-                const ctx = canvas.getContext('2d')!
-                ctx.fillStyle = '#333'
-                ctx.fillRect(0, 0, 64, 64)
-                const texture = new THREE.CanvasTexture(canvas)
-                resolve(texture)
-              }
-            )
+            const img = new Image()
+            img.crossOrigin = 'anonymous'
+            img.onload = () => {
+              const texture = new THREE.Texture(img)
+              texture.needsUpdate = true
+              texture.colorSpace = THREE.SRGBColorSpace
+              resolve({
+                texture,
+                imageAspect: img.width / img.height,
+              })
+            }
+            img.onerror = () => {
+              // On error, create a placeholder
+              const canvas = document.createElement('canvas')
+              canvas.width = 64
+              canvas.height = 64
+              const ctx = canvas.getContext('2d')!
+              ctx.fillStyle = '#333'
+              ctx.fillRect(0, 0, 64, 64)
+              const texture = new THREE.CanvasTexture(canvas)
+              resolve({ texture, imageAspect: 1 })
+            }
+            img.src = slide.image
           } else {
             const canvas = document.createElement('canvas')
             canvas.width = 64
@@ -147,31 +173,50 @@ export function CascadeTransition({
             ctx.fillStyle = slide.backgroundColor || '#333'
             ctx.fillRect(0, 0, 64, 64)
             const texture = new THREE.CanvasTexture(canvas)
-            resolve(texture)
+            resolve({ texture, imageAspect: 1 })
           }
         })
     )
 
-    Promise.all(loadPromises).then((textures) => {
-      texturesRef.current = textures
+    Promise.all(loadPromises).then((textureData) => {
+      textureDataRef.current = textureData
       setIsReady(true)
     })
 
     return () => {
-      texturesRef.current.forEach((t) => t.dispose())
-      texturesRef.current = []
+      textureDataRef.current.forEach((td) => td.texture.dispose())
+      textureDataRef.current = []
     }
   }, [slides])
 
+  // Helper to calculate UV coordinates for a grid cell with cover behavior
+  const calculateCellUV = (row: number, col: number, imageAspect: number) => {
+    const { scaleU, scaleV, offsetU, offsetV } = calculateCoverUV(imageAspect, aspectRatio)
+
+    // Calculate base UV for this cell in the grid (0-1 range)
+    const cellUMin = col / gridCols
+    const cellUMax = (col + 1) / gridCols
+    const cellVMin = row / gridRows
+    const cellVMax = (row + 1) / gridRows
+
+    // Apply cover transformation to the cell UVs
+    const uMin = offsetU + cellUMin * scaleU
+    const uMax = offsetU + cellUMax * scaleU
+    const vMin = offsetV + cellVMin * scaleV
+    const vMax = offsetV + cellVMax * scaleV
+
+    return { uMin, uMax, vMin, vMax }
+  }
+
   // Initialize grid when textures are ready
   useEffect(() => {
-    if (!isReady || !groupRef.current || texturesRef.current.length === 0) return
+    if (!isReady || !groupRef.current || textureDataRef.current.length === 0) return
     if (initializedRef.current) return
 
     initializedRef.current = true
 
-    const initialTexture = texturesRef.current[currentIndex] || texturesRef.current[0]
-    if (!initialTexture) return
+    const initialTextureData = textureDataRef.current[currentIndex] || textureDataRef.current[0]
+    if (!initialTextureData) return
 
     // Clear existing cubes
     while (groupRef.current.children.length > 0) {
@@ -188,11 +233,8 @@ export function CascadeTransition({
 
     for (let row = 0; row < gridRows; row++) {
       for (let col = 0; col < gridCols; col++) {
-        // Calculate UV offset for this cube's position in the grid
-        const uMin = col / gridCols
-        const uMax = (col + 1) / gridCols
-        const vMin = row / gridRows
-        const vMax = (row + 1) / gridRows
+        // Calculate UV offset for this cube's position in the grid with cover behavior
+        const { uMin, uMax, vMin, vMax } = calculateCellUV(row, col, initialTextureData.imageAspect)
 
         const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize)
         const uvAttribute = geometry.getAttribute('uv')
@@ -215,12 +257,12 @@ export function CascadeTransition({
         // Face order: +X, -X, +Y, -Y, +Z, -Z
         // Use MeshBasicMaterial to display textures without lighting effects
         const faceMaterials = [
-          new THREE.MeshBasicMaterial({ map: initialTexture }), // +X (right)
-          new THREE.MeshBasicMaterial({ map: initialTexture }), // -X (left)
-          new THREE.MeshBasicMaterial({ map: initialTexture }), // +Y (top)
-          new THREE.MeshBasicMaterial({ map: initialTexture }), // -Y (bottom)
-          new THREE.MeshBasicMaterial({ map: initialTexture }), // +Z (front)
-          new THREE.MeshBasicMaterial({ map: initialTexture }), // -Z (back)
+          new THREE.MeshBasicMaterial({ map: initialTextureData.texture }), // +X (right)
+          new THREE.MeshBasicMaterial({ map: initialTextureData.texture }), // -X (left)
+          new THREE.MeshBasicMaterial({ map: initialTextureData.texture }), // +Y (top)
+          new THREE.MeshBasicMaterial({ map: initialTextureData.texture }), // -Y (bottom)
+          new THREE.MeshBasicMaterial({ map: initialTextureData.texture }), // +Z (front)
+          new THREE.MeshBasicMaterial({ map: initialTextureData.texture }), // -Z (back)
         ]
 
         const cube = new THREE.Mesh(geometry, faceMaterials)
@@ -240,11 +282,11 @@ export function CascadeTransition({
         })
       }
     }
-  }, [isReady, gridCols, gridRows, cubeSize, gridWidth, gridHeight, currentIndex])
+  }, [isReady, gridCols, gridRows, cubeSize, gridWidth, gridHeight, currentIndex, aspectRatio])
 
   // Handle slide changes - just update the target, animation loop handles the rest
   useEffect(() => {
-    if (currentIndex !== targetIndexRef.current && texturesRef.current.length > 0) {
+    if (currentIndex !== targetIndexRef.current && textureDataRef.current.length > 0) {
       targetIndexRef.current = currentIndex
       // Determine overall direction based on target vs current displayed
       const dir = direction === 'next' ? 'forward' : 'backward'
@@ -252,9 +294,32 @@ export function CascadeTransition({
     }
   }, [currentIndex, direction])
 
+  // Helper to update UV coordinates for all cubes when changing to a new image
+  const updateCubeUVs = (imageAspect: number) => {
+    for (const cubeData of cubeDataRef.current) {
+      const { uMin, uMax, vMin, vMax } = calculateCellUV(cubeData.row, cubeData.col, imageAspect)
+      const geometry = cubeData.mesh.geometry as THREE.BoxGeometry
+      const uvAttribute = geometry.getAttribute('uv')
+      const uvArray = uvAttribute.array as Float32Array
+
+      for (let face = 0; face < 6; face++) {
+        const baseIndex = face * 8
+        uvArray[baseIndex + 0] = uMin
+        uvArray[baseIndex + 1] = vMax
+        uvArray[baseIndex + 2] = uMax
+        uvArray[baseIndex + 3] = vMax
+        uvArray[baseIndex + 4] = uMin
+        uvArray[baseIndex + 5] = vMin
+        uvArray[baseIndex + 6] = uMax
+        uvArray[baseIndex + 7] = vMin
+      }
+      uvAttribute.needsUpdate = true
+    }
+  }
+
   // Helper to start animating to the next slide in sequence
   const startNextTransition = () => {
-    if (cubeDataRef.current.length === 0 || texturesRef.current.length === 0) return false
+    if (cubeDataRef.current.length === 0 || textureDataRef.current.length === 0) return false
 
     const displayed = displayedIndexRef.current
     const target = targetIndexRef.current
@@ -272,11 +337,11 @@ export function CascadeTransition({
     }
 
     // Update side textures to show the next image
-    const nextTexture = texturesRef.current[nextIndex]
-    if (nextTexture) {
+    const nextTextureData = textureDataRef.current[nextIndex]
+    if (nextTextureData) {
       for (const cubeData of cubeDataRef.current) {
-        cubeData.faceMaterials[0].map = nextTexture // +X (right)
-        cubeData.faceMaterials[1].map = nextTexture // -X (left)
+        cubeData.faceMaterials[0].map = nextTextureData.texture // +X (right)
+        cubeData.faceMaterials[1].map = nextTextureData.texture // -X (left)
         cubeData.faceMaterials[0].needsUpdate = true
         cubeData.faceMaterials[1].needsUpdate = true
       }
@@ -324,13 +389,16 @@ export function CascadeTransition({
       }
 
       // Update all faces to the newly displayed texture
-      const newTexture = texturesRef.current[displayedIndexRef.current]
-      if (newTexture) {
+      const newTextureData = textureDataRef.current[displayedIndexRef.current]
+      if (newTextureData) {
+        // Update UVs to match the new image's aspect ratio
+        updateCubeUVs(newTextureData.imageAspect)
+
         for (const cubeData of cubeDataRef.current) {
           cubeData.mesh.rotation.y = 0
           cubeData.mesh.position.z = cubeData.baseZ
           for (const mat of cubeData.faceMaterials) {
-            mat.map = newTexture
+            mat.map = newTextureData.texture
             mat.needsUpdate = true
           }
         }
