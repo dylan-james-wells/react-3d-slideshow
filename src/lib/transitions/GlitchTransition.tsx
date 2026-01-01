@@ -10,6 +10,7 @@ interface GlitchTransitionProps {
   direction: 'next' | 'prev'
   aspectRatio?: number
   aberrationIntensity?: number
+  scanlinesIntensity?: number
 }
 
 const vertexShader = `
@@ -33,6 +34,7 @@ const fragmentShader = `
   uniform vec2 uLayer2Offset;
   uniform float uHueShift1;
   uniform float uHueShift2;
+  uniform float uScanlinesIntensity;
 
   varying vec2 vUv;
 
@@ -144,6 +146,32 @@ const fragmentShader = `
     finalColor = mix(finalColor, blended1, uOverlayIntensity * 0.4);
     finalColor = mix(finalColor, blended2, uOverlayIntensity * 0.4);
 
+    // === Scanlines effect ===
+    if (uScanlinesIntensity > 0.001) {
+      // Create horizontal scanlines - lower frequency for more visible lines
+      float scanlineFreq = 300.0;
+      float scrollSpeed = uTime * 80.0;
+
+      // Create the base scanline pattern
+      float scanlineY = uv.y * scanlineFreq + scrollSpeed;
+      float scanline = sin(scanlineY) * 0.5 + 0.5;
+
+      // Sharpen the scanlines to create distinct dark bands
+      scanline = smoothstep(0.3, 0.7, scanline);
+
+      // Dark scanlines (the dark lines between the bright ones)
+      float darkness = mix(1.0, 0.3, (1.0 - scanline) * uScanlinesIntensity);
+      finalColor *= darkness;
+
+      // Add CRT phosphor glow between lines
+      float glow = scanline * 0.15 * uScanlinesIntensity;
+      finalColor += glow;
+
+      // Add subtle flicker
+      float flicker = sin(uTime * 45.0) * 0.03 * uScanlinesIntensity;
+      finalColor *= (1.0 + flicker);
+    }
+
     gl_FragColor = vec4(finalColor, 1.0);
 
     // Apply sRGB encoding to match Three.js output color space
@@ -157,6 +185,7 @@ export function GlitchTransition({
   transitionDuration,
   aspectRatio = 3 / 2,
   aberrationIntensity = 0.5,
+  scanlinesIntensity = 0.5,
 }: GlitchTransitionProps) {
   const { viewport } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
@@ -230,6 +259,7 @@ export function GlitchTransition({
         uLayer2Offset: { value: new THREE.Vector2(0, 0) },
         uHueShift1: { value: 0 },
         uHueShift2: { value: 0 },
+        uScanlinesIntensity: { value: 0 },
       },
     })
     return material
@@ -320,6 +350,9 @@ export function GlitchTransition({
       const overlayIntensity = flattenedCurve
       shaderMaterial.uniforms.uOverlayIntensity.value = overlayIntensity
 
+      // Scanlines intensity follows the same curve
+      shaderMaterial.uniforms.uScanlinesIntensity.value = flattenedCurve * scanlinesIntensity
+
       // === Jerky glitch movement for layer 1 ===
       if (time >= glitch.layer1NextGlitch) {
         // Jump to new random target
@@ -369,6 +402,7 @@ export function GlitchTransition({
         shaderMaterial.uniforms.uLayer2Offset.value.set(0, 0)
         shaderMaterial.uniforms.uHueShift1.value = 0
         shaderMaterial.uniforms.uHueShift2.value = 0
+        shaderMaterial.uniforms.uScanlinesIntensity.value = 0
         timeRef.current = 0
         // Reset glitch state
         glitch.layer1CurrentX = 0

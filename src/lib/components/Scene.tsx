@@ -18,6 +18,7 @@ interface SceneProps {
   cascadeSubdivisions?: number
   aspectRatio?: number
   glitchAberration?: number
+  glitchScanlines?: number
 }
 
 function LoadingFallback() {
@@ -38,6 +39,7 @@ export function Scene({
   cascadeSubdivisions = 20,
   aspectRatio = 3 / 2,
   glitchAberration = 0.5,
+  glitchScanlines = 0.5,
 }: SceneProps) {
   const renderTransition = () => {
     const props = {
@@ -61,7 +63,7 @@ export function Scene({
       case 'flip':
         return <FlipTransition {...props} />
       case 'glitch':
-        return <GlitchTransition {...props} aspectRatio={aspectRatio} aberrationIntensity={glitchAberration} />
+        return <GlitchTransition {...props} aspectRatio={aspectRatio} aberrationIntensity={glitchAberration} scanlinesIntensity={glitchScanlines} />
       case 'wave':
         return <WaveTransition {...props} />
       case 'zoom':

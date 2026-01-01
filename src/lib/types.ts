@@ -38,6 +38,8 @@ export interface SlideshowProps {
   aspectRatio?: number
   /** Glitch aberration intensity (for 'glitch' style) - 0 to 1, default 0.5 */
   glitchAberration?: number
+  /** Glitch scanlines intensity (for 'glitch' style) - 0 to 1, default 0.5 */
+  glitchScanlines?: number
 }
 
 export interface SlideshowHandle {

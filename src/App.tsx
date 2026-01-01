@@ -180,6 +180,7 @@ function App() {
   const [aspectRatio, setAspectRatio] = useState('3:2')
   const [cubeTransitionDuration, setCubeTransitionDuration] = useState(800)
   const [glitchAberration, setGlitchAberration] = useState(0.5)
+  const [glitchScanlines, setGlitchScanlines] = useState(0.5)
   const slideshowRef = useRef<SlideshowHandle>(null)
 
   const handleSlideChange = (index: number) => {
@@ -274,6 +275,18 @@ function App() {
                 onChange={(e) => setGlitchAberration(Number(e.target.value))}
               />
               <span style={{ ...styles.label, marginLeft: 0 }}>{Math.round(glitchAberration * 100)}%</span>
+
+              <span style={styles.label}>Scanlines:</span>
+              <input
+                type="range"
+                style={{ ...styles.input, width: 120 }}
+                value={glitchScanlines}
+                min={0}
+                max={1}
+                step={0.1}
+                onChange={(e) => setGlitchScanlines(Number(e.target.value))}
+              />
+              <span style={{ ...styles.label, marginLeft: 0 }}>{Math.round(glitchScanlines * 100)}%</span>
             </>
           )}
 
@@ -327,6 +340,7 @@ function App() {
             cascadeSubdivisions={cascadeSubdivisions}
             aspectRatio={parseAspectRatio(aspectRatio)}
             glitchAberration={glitchAberration}
+            glitchScanlines={glitchScanlines}
           />
         </div>
 
