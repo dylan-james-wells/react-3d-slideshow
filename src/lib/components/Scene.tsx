@@ -59,7 +59,7 @@ export function Scene({
       case 'flip':
         return <FlipTransition {...props} />
       case 'glitch':
-        return <GlitchTransition {...props} />
+        return <GlitchTransition {...props} aspectRatio={aspectRatio} />
       case 'wave':
         return <WaveTransition {...props} />
       case 'zoom':
