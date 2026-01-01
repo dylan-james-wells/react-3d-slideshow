@@ -9,7 +9,6 @@ interface CubeTransitionProps {
   transitionDuration: number
   direction: 'next' | 'prev'
   aspectRatio?: number
-  fullscreen?: boolean
 }
 
 interface TextureData {
@@ -47,7 +46,6 @@ export function CubeTransition({
   transitionDuration,
   direction,
   aspectRatio: _aspectRatio = 3 / 2,
-  fullscreen = false,
 }: CubeTransitionProps) {
   // Note: aspectRatio is accepted for API consistency but cube transition uses square faces
   void _aspectRatio
@@ -71,18 +69,10 @@ export function CubeTransition({
   const targetIndexRef = useRef(currentIndex) // The final target slide
   const animationDirectionRef = useRef<'forward' | 'backward'>('forward')
 
-  // Calculate cube dimensions based on aspect ratio
+  // Calculate cube dimensions based on viewport
   // The cube rotates so we need square faces, sized to fit the content
-  const getCubeSize = () => {
-    if (fullscreen) {
-      // Fill viewport - use the smaller dimension
-      return Math.min(viewport.width, viewport.height)
-    }
-    // Fit within 60% of viewport
-    return Math.min(viewport.width * 0.6, viewport.height * 0.6)
-  }
-
-  const cubeSize = getCubeSize()
+  // Fit within 60% of viewport
+  const cubeSize = Math.min(viewport.width * 0.6, viewport.height * 0.6)
   const halfSize = cubeSize / 2
 
   // Load all textures with image aspect ratio information

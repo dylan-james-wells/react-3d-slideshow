@@ -180,6 +180,7 @@ function App() {
   const [glitchGrain, setGlitchGrain] = useState(0.5)
   const [fullscreen, setFullscreen] = useState(false)
   const [cascadeMinTiles, setCascadeMinTiles] = useState(15)
+  const [autoPlayInterval, setAutoPlayInterval] = useState(3000)
   const slideshowRef = useRef<SlideshowHandle>(null)
 
   const handleSlideChange = (index: number) => {
@@ -307,7 +308,7 @@ function App() {
             </>
           )}
 
-          {(selectedStyle === 'cascade' || selectedStyle === 'glitch' || selectedStyle === 'cube') && (
+          {(selectedStyle === 'cascade' || selectedStyle === 'glitch') && (
             <label style={styles.checkbox}>
               <input
                 type="checkbox"
@@ -326,6 +327,22 @@ function App() {
             />
             Auto Play
           </label>
+
+          {autoPlay && (
+            <>
+              <span style={styles.label}>Interval:</span>
+              <input
+                type="range"
+                style={{ ...styles.input, width: 120 }}
+                value={autoPlayInterval}
+                min={1000}
+                max={10000}
+                step={500}
+                onChange={(e) => setAutoPlayInterval(Number(e.target.value))}
+              />
+              <span style={{ ...styles.label, marginLeft: 0 }}>{(autoPlayInterval / 1000).toFixed(1)}s</span>
+            </>
+          )}
 
           <label style={styles.checkbox}>
             <input
@@ -356,7 +373,7 @@ function App() {
             slides={demoSlides}
             style={selectedStyle}
             autoPlay={autoPlay}
-            autoPlayInterval={3000}
+            autoPlayInterval={autoPlayInterval}
             loop={loop}
             transitionDuration={selectedStyle === 'cube' ? cubeTransitionDuration : 800}
             height={500}

@@ -61,7 +61,7 @@ export function Scene({
           />
         )
       case 'cube':
-        return <CubeTransition {...props} aspectRatio={aspectRatio} fullscreen={fullscreen} />
+        return <CubeTransition {...props} aspectRatio={aspectRatio} />
       case 'glitch':
         return <GlitchTransition {...props} aspectRatio={aspectRatio} aberrationIntensity={glitchAberration} scanlinesIntensity={glitchScanlines} grainIntensity={glitchGrain} fullscreen={fullscreen} />
       default:
