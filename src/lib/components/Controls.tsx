@@ -1,16 +1,21 @@
-import React, { useState } from 'react'
-import { ControlsProps } from '../types'
+import React, { useState, useMemo } from 'react'
+import { ControlsProps, FocusRingStyles } from '../types'
 
-const focusStyles = `
+function buildFocusStyles(ring: FocusRingStyles = {}) {
+  const color = ring.color ?? '#fff'
+  const width = ring.width ?? 2
+  const offset = ring.offset ?? 2
+  return `
 .r3dss__control:focus {
   outline: none;
 }
 .r3dss__control:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+  outline: ${width}px solid ${color};
+  outline-offset: ${offset}px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(0, 0, 0, 0.3);
 }
 `
+}
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
@@ -41,6 +46,13 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s ease',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
   },
+  customButton: {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    pointerEvents: 'auto',
+  },
   buttonHovered: {
     background: 'rgba(255, 255, 255, 1)',
     transform: 'scale(1.1)',
@@ -53,11 +65,11 @@ const styles: Record<string, React.CSSProperties> = {
 }
 
 function DefaultPrevButton() {
-  return <span style={{ marginRight: 2 }}>&#8249;</span>
+  return <span>&#9664;</span>
 }
 
 function DefaultNextButton() {
-  return <span style={{ marginLeft: 2 }}>&#8250;</span>
+  return <span>&#9654;</span>
 }
 
 export function Controls({
@@ -67,6 +79,7 @@ export function Controls({
   canGoPrev,
   prevButton,
   nextButton,
+  focusRingStyles,
 }: ControlsProps) {
   const showPrev = prevButton !== null
   const showNext = nextButton !== null
@@ -74,6 +87,11 @@ export function Controls({
   const isDefaultNext = nextButton === undefined
   const [prevHovered, setPrevHovered] = useState(false)
   const [nextHovered, setNextHovered] = useState(false)
+
+  const focusStyles = useMemo(
+    () => buildFocusStyles(focusRingStyles),
+    [focusRingStyles]
+  )
 
   return (
     <>
@@ -87,9 +105,9 @@ export function Controls({
         {showPrev && (
           <button
             type="button"
-            className={`r3dss__control r3dss__control--prev ${!canGoPrev ? 'r3dss__control--disabled' : ''} ${prevHovered && canGoPrev && isDefaultPrev ? 'r3dss__control--hovered' : ''}`}
+            className={`r3dss__control r3dss__control--prev ${!canGoPrev ? 'r3dss__control--disabled' : ''} ${prevHovered && canGoPrev && isDefaultPrev ? 'r3dss__control--hovered' : ''} ${!isDefaultPrev ? 'r3dss__control--custom' : ''}`}
             style={{
-              ...styles.button,
+              ...(isDefaultPrev ? styles.button : styles.customButton),
               ...(prevHovered && canGoPrev && isDefaultPrev ? styles.buttonHovered : {}),
               ...(canGoPrev ? {} : styles.buttonDisabled),
             }}
@@ -106,9 +124,9 @@ export function Controls({
         {showNext && (
           <button
             type="button"
-            className={`r3dss__control r3dss__control--next ${!canGoNext ? 'r3dss__control--disabled' : ''} ${nextHovered && canGoNext && isDefaultNext ? 'r3dss__control--hovered' : ''}`}
+            className={`r3dss__control r3dss__control--next ${!canGoNext ? 'r3dss__control--disabled' : ''} ${nextHovered && canGoNext && isDefaultNext ? 'r3dss__control--hovered' : ''} ${!isDefaultNext ? 'r3dss__control--custom' : ''}`}
             style={{
-              ...styles.button,
+              ...(isDefaultNext ? styles.button : styles.customButton),
               ...(nextHovered && canGoNext && isDefaultNext ? styles.buttonHovered : {}),
               ...(canGoNext ? {} : styles.buttonDisabled),
             }}

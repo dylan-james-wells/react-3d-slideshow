@@ -467,7 +467,7 @@ function App() {
         </p>
         <div style={styles.grid}>
           <div style={styles.card}>
-            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Custom Buttons & Indicators</h3>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Square Buttons & Bar Indicators</h3>
             <Slideshow
               slides={demoSlides}
               style="glitch"
@@ -475,10 +475,38 @@ function App() {
               showControls
               showIndicators
               prevButton={
-                <span style={{ fontSize: 18 }}>PREV</span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 36,
+                    height: 36,
+                    background: 'rgba(255,255,255,0.9)',
+                    borderRadius: 4,
+                    fontSize: 20,
+                    color: '#333',
+                  }}
+                >
+                  &#8249;
+                </span>
               }
               nextButton={
-                <span style={{ fontSize: 18 }}>NEXT</span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 36,
+                    height: 36,
+                    background: 'rgba(255,255,255,0.9)',
+                    borderRadius: 4,
+                    fontSize: 20,
+                    color: '#333',
+                  }}
+                >
+                  &#8250;
+                </span>
               }
               renderIndicator={(_index, isActive) => (
                 <span
@@ -504,10 +532,38 @@ function App() {
               showIndicators
               cascadeMinTiles={8}
               prevButton={
-                <span style={{ fontSize: 24 }}>&#x2190;</span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 36,
+                    height: 36,
+                    background: 'rgba(0,0,0,0.5)',
+                    borderRadius: '50%',
+                    fontSize: 20,
+                    color: '#fff',
+                  }}
+                >
+                  &#x2190;
+                </span>
               }
               nextButton={
-                <span style={{ fontSize: 24 }}>&#x2192;</span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 36,
+                    height: 36,
+                    background: 'rgba(0,0,0,0.5)',
+                    borderRadius: '50%',
+                    fontSize: 20,
+                    color: '#fff',
+                  }}
+                >
+                  &#x2192;
+                </span>
               }
               renderIndicator={(index, isActive) => (
                 <span

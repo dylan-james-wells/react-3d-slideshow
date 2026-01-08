@@ -1,15 +1,20 @@
-import React from 'react'
-import { IndicatorsProps } from '../types'
+import React, { useMemo } from 'react'
+import { IndicatorsProps, FocusRingStyles } from '../types'
 
-const focusStyles = `
+function buildFocusStyles(ring: FocusRingStyles = {}) {
+  const color = ring.color ?? '#fff'
+  const width = ring.width ?? 2
+  const offset = ring.offset ?? 2
+  return `
 .r3dss__indicator:focus {
   outline: none;
 }
 .r3dss__indicator:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+  outline: ${width}px solid ${color};
+  outline-offset: ${offset}px;
 }
 `
+}
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
@@ -37,7 +42,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
 }
 
-export function Indicators({ total, current, onSelect, renderIndicator }: IndicatorsProps) {
+export function Indicators({ total, current, onSelect, renderIndicator, focusRingStyles }: IndicatorsProps) {
+  const focusStyles = useMemo(
+    () => buildFocusStyles(focusRingStyles),
+    [focusRingStyles]
+  )
+
   return (
     <>
       <style>{focusStyles}</style>

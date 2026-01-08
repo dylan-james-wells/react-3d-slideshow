@@ -1,5 +1,14 @@
 import { ReactNode, ReactElement } from 'react'
 
+export interface FocusRingStyles {
+  /** Focus ring color. Defaults to '#fff' */
+  color?: string
+  /** Focus ring width in pixels. Defaults to 2 */
+  width?: number
+  /** Focus ring offset in pixels. Defaults to 2 */
+  offset?: number
+}
+
 export type TransitionStyle =
   | 'cascade'
   | 'cube'
@@ -57,6 +66,8 @@ export interface SlideshowProps {
   fallback?: ReactElement | null
   /** Callback fired when WebGL is not supported */
   onWebGLUnsupported?: () => void
+  /** Customize the focus ring styles for keyboard accessibility */
+  focusRingStyles?: FocusRingStyles
 }
 
 export interface SlideshowHandle {
@@ -82,6 +93,7 @@ export interface ControlsProps {
   canGoPrev: boolean
   prevButton?: ReactElement | null
   nextButton?: ReactElement | null
+  focusRingStyles?: FocusRingStyles
 }
 
 export interface IndicatorsProps {
@@ -89,4 +101,5 @@ export interface IndicatorsProps {
   current: number
   onSelect: (index: number) => void
   renderIndicator?: (index: number, isActive: boolean) => ReactElement
+  focusRingStyles?: FocusRingStyles
 }

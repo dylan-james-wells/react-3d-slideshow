@@ -17,4 +17,5 @@ export type {
   TransitionStyle,
   ControlsProps,
   IndicatorsProps,
+  FocusRingStyles,
 } from './types'

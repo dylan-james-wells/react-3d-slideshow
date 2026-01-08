@@ -63,6 +63,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       getSlideAriaLabel,
       fallback,
       onWebGLUnsupported,
+      focusRingStyles,
     } = props
 
     const [webglAvailable, setWebglAvailable] = useState(true)
@@ -271,6 +272,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             canGoPrev={canGoPrev}
             prevButton={prevButton}
             nextButton={nextButton}
+            focusRingStyles={focusRingStyles}
           />
         )}
 
@@ -280,6 +282,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             current={currentIndex}
             onSelect={goTo}
             renderIndicator={renderIndicator}
+            focusRingStyles={focusRingStyles}
           />
         )}
       </div>
