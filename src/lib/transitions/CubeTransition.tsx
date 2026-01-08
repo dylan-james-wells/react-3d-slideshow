@@ -9,6 +9,7 @@ interface CubeTransitionProps {
   transitionDuration: number
   direction: 'next' | 'prev'
   aspectRatio?: number
+  onReady?: () => void
 }
 
 interface TextureData {
@@ -46,6 +47,7 @@ export function CubeTransition({
   transitionDuration,
   direction,
   aspectRatio: _aspectRatio = 3 / 2,
+  onReady,
 }: CubeTransitionProps) {
   // Note: aspectRatio is accepted for API consistency but cube transition uses square faces
   void _aspectRatio
@@ -120,13 +122,14 @@ export function CubeTransition({
     Promise.all(loadPromises).then((textureData) => {
       textureDataRef.current = textureData
       setIsReady(true)
+      onReady?.()
     })
 
     return () => {
       textureDataRef.current.forEach((td) => td.texture.dispose())
       textureDataRef.current = []
     }
-  }, [slides])
+  }, [slides, onReady])
 
   // Apply UV transformation for cover behavior on a plane's geometry
   const applyPlaneUVs = useCallback((plane: THREE.Mesh | null, imageAspect: number) => {

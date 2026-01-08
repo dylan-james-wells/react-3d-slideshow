@@ -3,9 +3,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useSlideshow } from './useSlideshow'
 
 const mockSlides = [
-  { image: 'slide1.jpg' },
-  { image: 'slide2.jpg' },
-  { image: 'slide3.jpg' },
+  { id: 1, image: 'slide1.jpg' },
+  { id: 2, image: 'slide2.jpg' },
+  { id: 3, image: 'slide3.jpg' },
 ]
 
 describe('useSlideshow', () => {

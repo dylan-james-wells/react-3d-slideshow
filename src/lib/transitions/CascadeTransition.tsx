@@ -11,6 +11,7 @@ interface CascadeTransitionProps {
   minTiles?: number
   aspectRatio?: number
   fullscreen?: boolean
+  onReady?: () => void
 }
 
 // Calculate grid dimensions for square tiles
@@ -81,6 +82,7 @@ export function CascadeTransition({
   minTiles = 10,
   aspectRatio = 3 / 2,
   fullscreen = false,
+  onReady,
 }: CascadeTransitionProps) {
   const { viewport } = useThree()
   const groupRef = useRef<THREE.Group>(null)
@@ -193,13 +195,14 @@ export function CascadeTransition({
     Promise.all(loadPromises).then((textureData) => {
       textureDataRef.current = textureData
       setIsReady(true)
+      onReady?.()
     })
 
     return () => {
       textureDataRef.current.forEach((td) => td.texture.dispose())
       textureDataRef.current = []
     }
-  }, [slides])
+  }, [slides, onReady])
 
   // Helper to calculate UV coordinates for a grid cell with cover behavior
   const calculateCellUV = (row: number, col: number, imageAspect: number) => {

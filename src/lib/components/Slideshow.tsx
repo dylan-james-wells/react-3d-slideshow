@@ -1,10 +1,11 @@
-import React, { forwardRef, useImperativeHandle, useMemo } from 'react'
+import React, { forwardRef, useImperativeHandle, useMemo, useState, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { SlideshowProps, SlideshowHandle } from '../types'
 import { useSlideshow, useSwipe, useKeyboard } from '../hooks'
 import { Scene } from './Scene'
 import { Controls } from './Controls'
 import { Indicators } from './Indicators'
+import { LoadingSpinner } from './LoadingSpinner'
 
 const defaultProps: Partial<SlideshowProps> = {
   style: 'cascade',
@@ -52,7 +53,11 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       glitchScanlines = defaultProps.glitchScanlines,
       glitchGrain = defaultProps.glitchGrain,
       fullscreen = false,
+      loadingSpinner,
     } = props
+
+    const [isLoading, setIsLoading] = useState(true)
+    const handleReady = useCallback(() => setIsLoading(false), [])
 
     const {
       currentIndex,
@@ -151,8 +156,28 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             glitchScanlines={glitchScanlines}
             glitchGrain={glitchGrain}
             fullscreen={fullscreen}
+            onReady={handleReady}
           />
         </Canvas>
+
+        {isLoading && loadingSpinner !== null && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#000',
+              zIndex: 10,
+            }}
+          >
+            {loadingSpinner ?? <LoadingSpinner />}
+          </div>
+        )}
 
         {showControls && slides.length > 1 && (
           <Controls

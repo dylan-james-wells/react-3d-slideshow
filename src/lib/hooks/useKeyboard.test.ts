@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { useKeyboard } from './useKeyboard'
 
 describe('useKeyboard', () => {

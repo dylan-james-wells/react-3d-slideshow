@@ -15,6 +15,7 @@ interface GlitchTransitionProps {
   scanlinesIntensity?: number
   grainIntensity?: number
   fullscreen?: boolean
+  onReady?: () => void
 }
 
 interface TextureData {
@@ -51,6 +52,7 @@ export function GlitchTransition({
   scanlinesIntensity = 0.5,
   grainIntensity = 0.5,
   fullscreen = false,
+  onReady,
 }: GlitchTransitionProps) {
   const { viewport } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
@@ -107,8 +109,9 @@ export function GlitchTransition({
     Promise.all(loadPromises).then((loaded) => {
       setTextureData(loaded)
       setIsReady(true)
+      onReady?.()
     })
-  }, [slides])
+  }, [slides, onReady])
 
   // Create shader material
   const shaderMaterial = useMemo(() => {

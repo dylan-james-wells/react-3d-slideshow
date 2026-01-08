@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, ReactElement } from 'react'
 
 export type TransitionStyle =
   | 'cascade'
@@ -41,6 +41,8 @@ export interface SlideshowProps {
   glitchGrain?: number
   /** Fullscreen cover mode - fills container like object-fit: cover (for 'glitch' style) */
   fullscreen?: boolean
+  /** Custom loading spinner element. Set to null to disable, or provide a custom ReactElement */
+  loadingSpinner?: ReactElement | null
 }
 
 export interface SlideshowHandle {

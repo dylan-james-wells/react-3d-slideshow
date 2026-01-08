@@ -18,6 +18,7 @@ interface SceneProps {
   glitchScanlines?: number
   glitchGrain?: number
   fullscreen?: boolean
+  onReady?: () => void
 }
 
 function LoadingFallback() {
@@ -41,6 +42,7 @@ export function Scene({
   glitchScanlines = 0.5,
   glitchGrain = 0.5,
   fullscreen = false,
+  onReady,
 }: SceneProps) {
   const renderTransition = () => {
     const props = {
@@ -48,6 +50,7 @@ export function Scene({
       currentIndex,
       transitionDuration,
       direction,
+      onReady,
     }
 
     switch (style) {
