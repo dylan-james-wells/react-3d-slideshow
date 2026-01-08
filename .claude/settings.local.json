@@ -12,7 +12,8 @@
       "Bash(npm run build:lib:*)",
       "Bash(ls:*)",
       "Bash(timeout 10 npm run dev:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npm run test:run:*)"
     ]
   }
 }

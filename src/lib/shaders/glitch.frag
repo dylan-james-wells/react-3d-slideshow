@@ -2,6 +2,9 @@
 // Creates a glitchy transition effect with chromatic aberration,
 // hue-rotated overlay layers, scanlines, and film grain
 
+#define PI 3.14159265359
+#define TWO_PI 6.28318530718
+
 uniform sampler2D uCurrentTexture;
 uniform sampler2D uNextTexture;
 uniform float uProgress;
@@ -26,7 +29,7 @@ float random(vec2 st) {
 // Hue rotation function
 // Rotates the color hue by a given amount (0-1 maps to 0-360 degrees)
 vec3 hueRotate(vec3 color, float hue) {
-  float angle = hue * 6.28318530718; // Convert to radians (0-1 maps to 0-2PI)
+  float angle = hue * TWO_PI; // Convert to radians (0-1 maps to 0-2PI)
   float s = sin(angle);
   float c = cos(angle);
   vec3 weights = (vec3(2.0 * c, -sqrt(3.0) * s - c, sqrt(3.0) * s - c) + 1.0) / 3.0;
