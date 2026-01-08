@@ -123,8 +123,12 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
 
     if (slides.length === 0) {
       return (
-        <div style={containerStyle} className={className}>
+        <div
+          style={containerStyle}
+          className={`r3dss r3dss--empty ${className || ''}`.trim()}
+        >
           <div
+            className="r3dss__empty-message"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -147,7 +151,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
     return (
       <div
         style={{ ...containerStyle, cursor: enableSwipe ? 'grab' : undefined }}
-        className={className}
+        className={`r3dss r3dss--${style} ${className || ''}`.trim()}
         onMouseEnter={pause}
         onMouseLeave={onMouseLeave}
         onMouseDown={handleMouseDown}
@@ -158,6 +162,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
         onTouchEnd={handleTouchEnd}
       >
         <Canvas
+          className="r3dss__canvas"
           camera={{ position: [0, 0, 5], fov: 50 }}
           dpr={[1, 2]}
           style={{ touchAction: 'pan-y' }}
@@ -181,6 +186,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
 
         {isLoading && loadingSpinner !== null && (
           <div
+            className="r3dss__loader"
             style={{
               position: 'absolute',
               top: 0,

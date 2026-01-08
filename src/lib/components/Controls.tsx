@@ -56,9 +56,10 @@ export function Controls({
   const showNext = nextButton !== null
 
   return (
-    <div style={styles.container}>
+    <div className="r3dss__controls" style={styles.container}>
       {showPrev && (
         <button
+          className={`r3dss__control r3dss__control--prev ${!canGoPrev ? 'r3dss__control--disabled' : ''}`}
           style={{
             ...styles.button,
             ...(canGoPrev ? {} : styles.buttonDisabled),
@@ -70,9 +71,10 @@ export function Controls({
           {prevButton ?? <DefaultPrevButton />}
         </button>
       )}
-      {!showPrev && <div />}
+      {!showPrev && <div className="r3dss__control-spacer" />}
       {showNext && (
         <button
+          className={`r3dss__control r3dss__control--next ${!canGoNext ? 'r3dss__control--disabled' : ''}`}
           style={{
             ...styles.button,
             ...(canGoNext ? {} : styles.buttonDisabled),

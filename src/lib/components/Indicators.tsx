@@ -29,7 +29,7 @@ const styles: Record<string, React.CSSProperties> = {
 
 export function Indicators({ total, current, onSelect, renderIndicator }: IndicatorsProps) {
   return (
-    <div style={styles.container}>
+    <div className="r3dss__indicators" style={styles.container}>
       {Array.from({ length: total }, (_, i) => {
         const isActive = i === current
 
@@ -37,6 +37,7 @@ export function Indicators({ total, current, onSelect, renderIndicator }: Indica
           return (
             <button
               key={i}
+              className={`r3dss__indicator r3dss__indicator--custom ${isActive ? 'r3dss__indicator--active' : ''}`}
               onClick={() => onSelect(i)}
               aria-label={`Go to slide ${i + 1}`}
               aria-current={isActive ? 'true' : undefined}
@@ -50,6 +51,7 @@ export function Indicators({ total, current, onSelect, renderIndicator }: Indica
         return (
           <button
             key={i}
+            className={`r3dss__indicator ${isActive ? 'r3dss__indicator--active' : ''}`}
             style={{
               ...styles.dot,
               ...(isActive ? styles.dotActive : {}),
