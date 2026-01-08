@@ -1,5 +1,5 @@
 {
-  "name": "react-3d-slideshow",
+  "name": "@dylanwells/react-3d-slideshow",
   "version": "0.1.0",
   "description": "A React slideshow component with stunning 3D transitions powered by Three.js",
   "main": "dist/index.js",

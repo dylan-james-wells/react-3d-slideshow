@@ -9,13 +9,13 @@ A React slideshow component with 3D transitions powered by Three.js and @react-t
 ## Installation
 
 ```bash
-npm install react-3d-slideshow
+npm install @dylanwells/react-3d-slideshow
 ```
 
 ## Quick Start
 
 ```tsx
-import { Slideshow } from 'react-3d-slideshow'
+import { Slideshow } from '@dylanwells/react-3d-slideshow'
 
 const slides = [
   { id: 1, image: '/image1.jpg' },
@@ -163,7 +163,7 @@ Set to `null` to hide a button entirely:
 ### Custom Loading Spinner
 
 ```tsx
-import { LoadingSpinner } from 'react-3d-slideshow'
+import { LoadingSpinner } from '@dylanwells/react-3d-slideshow'
 
 // Use built-in spinner with custom props
 <Slideshow
@@ -224,7 +224,7 @@ When WebGL is not supported, the slideshow automatically falls back to a simple 
 You can also check WebGL support programmatically:
 
 ```tsx
-import { isWebGLSupported } from 'react-3d-slideshow'
+import { isWebGLSupported } from '@dylanwells/react-3d-slideshow'
 
 if (isWebGLSupported()) {
   // WebGL is available
@@ -237,7 +237,7 @@ The `Slideshow` component exposes methods via a ref for programmatic control:
 
 ```tsx
 import { useRef } from 'react'
-import { Slideshow, SlideshowHandle } from 'react-3d-slideshow'
+import { Slideshow, SlideshowHandle } from '@dylanwells/react-3d-slideshow'
 
 function App() {
   const slideshowRef = useRef<SlideshowHandle>(null)
@@ -320,7 +320,7 @@ import type {
   FocusRingStyles,
   LoadingSpinnerProps,
   FallbackSlideshowProps,
-} from 'react-3d-slideshow'
+} from '@dylanwells/react-3d-slideshow'
 ```
 
 ## License
