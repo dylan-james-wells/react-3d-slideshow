@@ -461,6 +461,103 @@ function App() {
       </section>
 
       <section style={styles.section}>
+        <h2 style={styles.sectionTitle}>Custom Components</h2>
+        <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 24 }}>
+          Customize the loading spinner, navigation buttons, and indicators with your own components.
+        </p>
+        <div style={styles.grid}>
+          <div style={styles.card}>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Custom Buttons & Indicators</h3>
+            <Slideshow
+              slides={demoSlides}
+              style="glitch"
+              height={220}
+              showControls
+              showIndicators
+              prevButton={
+                <span style={{ fontSize: 18 }}>PREV</span>
+              }
+              nextButton={
+                <span style={{ fontSize: 18 }}>NEXT</span>
+              }
+              renderIndicator={(_index, isActive) => (
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 24,
+                    height: 4,
+                    background: isActive ? '#fff' : 'rgba(255,255,255,0.3)',
+                    borderRadius: 2,
+                    transition: 'all 0.2s',
+                  }}
+                />
+              )}
+            />
+          </div>
+          <div style={styles.card}>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>Numbered Indicators</h3>
+            <Slideshow
+              slides={demoSlides}
+              style="cascade"
+              height={220}
+              showControls
+              showIndicators
+              cascadeMinTiles={8}
+              prevButton={
+                <span style={{ fontSize: 24 }}>&#x2190;</span>
+              }
+              nextButton={
+                <span style={{ fontSize: 24 }}>&#x2192;</span>
+              }
+              renderIndicator={(index, isActive) => (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: isActive ? '#764ba2' : 'rgba(255,255,255,0.2)',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {index + 1}
+                </span>
+              )}
+            />
+          </div>
+          <div style={styles.card}>
+            <h3 style={{ ...styles.cardTitle, textTransform: 'none' }}>No Controls (Indicators Only)</h3>
+            <Slideshow
+              slides={demoSlides}
+              style="cube"
+              height={220}
+              showControls
+              showIndicators
+              prevButton={null}
+              nextButton={null}
+              renderIndicator={(_index, isActive) => (
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: isActive ? 20 : 8,
+                    height: 8,
+                    background: isActive ? '#667eea' : 'rgba(255,255,255,0.4)',
+                    borderRadius: 4,
+                    transition: 'all 0.3s',
+                  }}
+                />
+              )}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section style={styles.section}>
         <h2 style={styles.sectionTitle}>Features</h2>
         <div style={styles.grid}>
           <div style={styles.card}>
