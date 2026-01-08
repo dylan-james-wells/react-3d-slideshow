@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react'
-import { Slideshow, SlideshowHandle, SlideData, TransitionStyle } from 'react-3d-slideshow'
+import { Slideshow, SlideshowHandle, SlideData, TransitionStyle } from '@dylanwells/react-3d-slideshow'
 
 const demoSlides: SlideData[] = [
   {
@@ -436,9 +436,9 @@ function App() {
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>Quick Start</h2>
         <div style={styles.codeBlock}>
-          <pre>{`npm install react-3d-slideshow
+          <pre>{`npm install @dylanwells/react-3d-slideshow three @react-three/fiber
 
-import { Slideshow } from 'react-3d-slideshow'
+import { Slideshow } from '@dylanwells/react-3d-slideshow'
 
 const slides = [
   { id: 1, image: '/image1.jpg' },

@@ -58,7 +58,7 @@ export default [
         exclude: ['**/*.demo.tsx', '**/demo/**', 'src/main.tsx', 'src/App.tsx'],
       }),
     ],
-    external: ['react', 'react-dom', 'three', '@react-three/fiber', '@react-three/drei'],
+    external: ['react', 'react-dom', 'three', '@react-three/fiber'],
   },
   {
     input: 'dist/lib/index.d.ts',
