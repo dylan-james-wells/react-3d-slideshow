@@ -47,6 +47,8 @@ export interface SlideshowProps {
   prevButton?: ReactElement | null
   /** Custom next button element. Set to null to hide, or provide a custom ReactElement */
   nextButton?: ReactElement | null
+  /** Custom indicator renderer. Receives index and isActive, returns a ReactElement */
+  renderIndicator?: (index: number, isActive: boolean) => ReactElement
 }
 
 export interface SlideshowHandle {
@@ -78,4 +80,5 @@ export interface IndicatorsProps {
   total: number
   current: number
   onSelect: (index: number) => void
+  renderIndicator?: (index: number, isActive: boolean) => ReactElement
 }

@@ -27,21 +27,39 @@ const styles: Record<string, React.CSSProperties> = {
   },
 }
 
-export function Indicators({ total, current, onSelect }: IndicatorsProps) {
+export function Indicators({ total, current, onSelect, renderIndicator }: IndicatorsProps) {
   return (
     <div style={styles.container}>
-      {Array.from({ length: total }, (_, i) => (
-        <button
-          key={i}
-          style={{
-            ...styles.dot,
-            ...(i === current ? styles.dotActive : {}),
-          }}
-          onClick={() => onSelect(i)}
-          aria-label={`Go to slide ${i + 1}`}
-          aria-current={i === current ? 'true' : undefined}
-        />
-      ))}
+      {Array.from({ length: total }, (_, i) => {
+        const isActive = i === current
+
+        if (renderIndicator) {
+          return (
+            <button
+              key={i}
+              onClick={() => onSelect(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              aria-current={isActive ? 'true' : undefined}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            >
+              {renderIndicator(i, isActive)}
+            </button>
+          )
+        }
+
+        return (
+          <button
+            key={i}
+            style={{
+              ...styles.dot,
+              ...(isActive ? styles.dotActive : {}),
+            }}
+            onClick={() => onSelect(i)}
+            aria-label={`Go to slide ${i + 1}`}
+            aria-current={isActive ? 'true' : undefined}
+          />
+        )
+      })}
     </div>
   )
 }

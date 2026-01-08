@@ -56,6 +56,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       loadingSpinner,
       prevButton,
       nextButton,
+      renderIndicator,
     } = props
 
     const [isLoading, setIsLoading] = useState(true)
@@ -197,6 +198,7 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             total={slides.length}
             current={currentIndex}
             onSelect={goTo}
+            renderIndicator={renderIndicator}
           />
         )}
       </div>
