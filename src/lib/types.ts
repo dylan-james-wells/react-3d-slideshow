@@ -49,6 +49,10 @@ export interface SlideshowProps {
   nextButton?: ReactElement | null
   /** Custom indicator renderer. Receives index and isActive, returns a ReactElement */
   renderIndicator?: (index: number, isActive: boolean) => ReactElement
+  /** Accessible label for the slideshow region. Defaults to "Image slideshow" */
+  ariaLabel?: string
+  /** Custom function to generate slide announcement text for screen readers */
+  getSlideAriaLabel?: (index: number, total: number) => string
 }
 
 export interface SlideshowHandle {

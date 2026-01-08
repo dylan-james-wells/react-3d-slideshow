@@ -1,6 +1,16 @@
 import React from 'react'
 import { IndicatorsProps } from '../types'
 
+const focusStyles = `
+.r3dss__indicator:focus {
+  outline: none;
+}
+.r3dss__indicator:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+`
+
 const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'absolute',
@@ -29,39 +39,53 @@ const styles: Record<string, React.CSSProperties> = {
 
 export function Indicators({ total, current, onSelect, renderIndicator }: IndicatorsProps) {
   return (
-    <div className="r3dss__indicators" style={styles.container}>
-      {Array.from({ length: total }, (_, i) => {
-        const isActive = i === current
+    <>
+      <style>{focusStyles}</style>
+      <div
+        className="r3dss__indicators"
+        role="tablist"
+        aria-label="Slide indicators"
+        style={styles.container}
+      >
+        {Array.from({ length: total }, (_, i) => {
+          const isActive = i === current
 
-        if (renderIndicator) {
+          if (renderIndicator) {
+            return (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                className={`r3dss__indicator r3dss__indicator--custom ${isActive ? 'r3dss__indicator--active' : ''}`}
+                onClick={() => onSelect(i)}
+                aria-label={`Slide ${i + 1}`}
+                aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+              >
+                {renderIndicator(i, isActive)}
+              </button>
+            )
+          }
+
           return (
             <button
               key={i}
-              className={`r3dss__indicator r3dss__indicator--custom ${isActive ? 'r3dss__indicator--active' : ''}`}
+              type="button"
+              role="tab"
+              className={`r3dss__indicator ${isActive ? 'r3dss__indicator--active' : ''}`}
+              style={{
+                ...styles.dot,
+                ...(isActive ? styles.dotActive : {}),
+              }}
               onClick={() => onSelect(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              aria-current={isActive ? 'true' : undefined}
-              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-            >
-              {renderIndicator(i, isActive)}
-            </button>
+              aria-label={`Slide ${i + 1}`}
+              aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
+            />
           )
-        }
-
-        return (
-          <button
-            key={i}
-            className={`r3dss__indicator ${isActive ? 'r3dss__indicator--active' : ''}`}
-            style={{
-              ...styles.dot,
-              ...(isActive ? styles.dotActive : {}),
-            }}
-            onClick={() => onSelect(i)}
-            aria-label={`Go to slide ${i + 1}`}
-            aria-current={isActive ? 'true' : undefined}
-          />
-        )
-      })}
-    </div>
+        })}
+      </div>
+    </>
   )
 }

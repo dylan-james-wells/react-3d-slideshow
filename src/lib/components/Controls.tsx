@@ -1,6 +1,17 @@
 import React, { useState } from 'react'
 import { ControlsProps } from '../types'
 
+const focusStyles = `
+.r3dss__control:focus {
+  outline: none;
+}
+.r3dss__control:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(0, 0, 0, 0.3);
+}
+`
+
 const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'absolute',
@@ -65,42 +76,52 @@ export function Controls({
   const [nextHovered, setNextHovered] = useState(false)
 
   return (
-    <div className="r3dss__controls" style={styles.container}>
-      {showPrev && (
-        <button
-          className={`r3dss__control r3dss__control--prev ${!canGoPrev ? 'r3dss__control--disabled' : ''} ${prevHovered && canGoPrev && isDefaultPrev ? 'r3dss__control--hovered' : ''}`}
-          style={{
-            ...styles.button,
-            ...(prevHovered && canGoPrev && isDefaultPrev ? styles.buttonHovered : {}),
-            ...(canGoPrev ? {} : styles.buttonDisabled),
-          }}
-          onClick={onPrev}
-          onMouseEnter={() => setPrevHovered(true)}
-          onMouseLeave={() => setPrevHovered(false)}
-          disabled={!canGoPrev}
-          aria-label="Previous slide"
-        >
-          {prevButton ?? <DefaultPrevButton />}
-        </button>
-      )}
-      {!showPrev && <div className="r3dss__control-spacer" />}
-      {showNext && (
-        <button
-          className={`r3dss__control r3dss__control--next ${!canGoNext ? 'r3dss__control--disabled' : ''} ${nextHovered && canGoNext && isDefaultNext ? 'r3dss__control--hovered' : ''}`}
-          style={{
-            ...styles.button,
-            ...(nextHovered && canGoNext && isDefaultNext ? styles.buttonHovered : {}),
-            ...(canGoNext ? {} : styles.buttonDisabled),
-          }}
-          onClick={onNext}
-          onMouseEnter={() => setNextHovered(true)}
-          onMouseLeave={() => setNextHovered(false)}
-          disabled={!canGoNext}
-          aria-label="Next slide"
-        >
-          {nextButton ?? <DefaultNextButton />}
-        </button>
-      )}
-    </div>
+    <>
+      <style>{focusStyles}</style>
+      <div
+        className="r3dss__controls"
+        role="group"
+        aria-label="Slideshow controls"
+        style={styles.container}
+      >
+        {showPrev && (
+          <button
+            type="button"
+            className={`r3dss__control r3dss__control--prev ${!canGoPrev ? 'r3dss__control--disabled' : ''} ${prevHovered && canGoPrev && isDefaultPrev ? 'r3dss__control--hovered' : ''}`}
+            style={{
+              ...styles.button,
+              ...(prevHovered && canGoPrev && isDefaultPrev ? styles.buttonHovered : {}),
+              ...(canGoPrev ? {} : styles.buttonDisabled),
+            }}
+            onClick={onPrev}
+            onMouseEnter={() => setPrevHovered(true)}
+            onMouseLeave={() => setPrevHovered(false)}
+            disabled={!canGoPrev}
+            aria-label="Previous slide"
+          >
+            {prevButton ?? <DefaultPrevButton />}
+          </button>
+        )}
+        {!showPrev && <div className="r3dss__control-spacer" />}
+        {showNext && (
+          <button
+            type="button"
+            className={`r3dss__control r3dss__control--next ${!canGoNext ? 'r3dss__control--disabled' : ''} ${nextHovered && canGoNext && isDefaultNext ? 'r3dss__control--hovered' : ''}`}
+            style={{
+              ...styles.button,
+              ...(nextHovered && canGoNext && isDefaultNext ? styles.buttonHovered : {}),
+              ...(canGoNext ? {} : styles.buttonDisabled),
+            }}
+            onClick={onNext}
+            onMouseEnter={() => setNextHovered(true)}
+            onMouseLeave={() => setNextHovered(false)}
+            disabled={!canGoNext}
+            aria-label="Next slide"
+          >
+            {nextButton ?? <DefaultNextButton />}
+          </button>
+        )}
+      </div>
+    </>
   )
 }

@@ -57,10 +57,18 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       prevButton,
       nextButton,
       renderIndicator,
+      ariaLabel = 'Image slideshow',
+      getSlideAriaLabel,
     } = props
 
     const [isLoading, setIsLoading] = useState(true)
     const handleReady = useCallback(() => setIsLoading(false), [])
+
+    const defaultGetSlideAriaLabel = useCallback(
+      (index: number, total: number) => `Slide ${index + 1} of ${total}`,
+      []
+    )
+    const slideAriaLabel = getSlideAriaLabel || defaultGetSlideAriaLabel
 
     const {
       currentIndex,
@@ -150,6 +158,9 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
 
     return (
       <div
+        role="region"
+        aria-roledescription="carousel"
+        aria-label={ariaLabel}
         style={{ ...containerStyle, cursor: enableSwipe ? 'grab' : undefined }}
         className={`r3dss r3dss--${style} ${className || ''}`.trim()}
         onMouseEnter={pause}
@@ -161,6 +172,27 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Screen reader live region for slide announcements */}
+        <div
+          className="r3dss__live-region"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          style={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          {slideAriaLabel(currentIndex, slides.length)}
+        </div>
+
         <Canvas
           className="r3dss__canvas"
           camera={{ position: [0, 0, 5], fov: 50 }}
@@ -187,6 +219,8 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
         {isLoading && loadingSpinner !== null && (
           <div
             className="r3dss__loader"
+            role="status"
+            aria-label="Loading slideshow"
             style={{
               position: 'absolute',
               top: 0,
