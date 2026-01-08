@@ -59,6 +59,8 @@ export function Controls({
 }: ControlsProps) {
   const showPrev = prevButton !== null
   const showNext = nextButton !== null
+  const isDefaultPrev = prevButton === undefined
+  const isDefaultNext = nextButton === undefined
   const [prevHovered, setPrevHovered] = useState(false)
   const [nextHovered, setNextHovered] = useState(false)
 
@@ -66,10 +68,10 @@ export function Controls({
     <div className="r3dss__controls" style={styles.container}>
       {showPrev && (
         <button
-          className={`r3dss__control r3dss__control--prev ${!canGoPrev ? 'r3dss__control--disabled' : ''} ${prevHovered && canGoPrev ? 'r3dss__control--hovered' : ''}`}
+          className={`r3dss__control r3dss__control--prev ${!canGoPrev ? 'r3dss__control--disabled' : ''} ${prevHovered && canGoPrev && isDefaultPrev ? 'r3dss__control--hovered' : ''}`}
           style={{
             ...styles.button,
-            ...(prevHovered && canGoPrev ? styles.buttonHovered : {}),
+            ...(prevHovered && canGoPrev && isDefaultPrev ? styles.buttonHovered : {}),
             ...(canGoPrev ? {} : styles.buttonDisabled),
           }}
           onClick={onPrev}
@@ -84,10 +86,10 @@ export function Controls({
       {!showPrev && <div className="r3dss__control-spacer" />}
       {showNext && (
         <button
-          className={`r3dss__control r3dss__control--next ${!canGoNext ? 'r3dss__control--disabled' : ''} ${nextHovered && canGoNext ? 'r3dss__control--hovered' : ''}`}
+          className={`r3dss__control r3dss__control--next ${!canGoNext ? 'r3dss__control--disabled' : ''} ${nextHovered && canGoNext && isDefaultNext ? 'r3dss__control--hovered' : ''}`}
           style={{
             ...styles.button,
-            ...(nextHovered && canGoNext ? styles.buttonHovered : {}),
+            ...(nextHovered && canGoNext && isDefaultNext ? styles.buttonHovered : {}),
             ...(canGoNext ? {} : styles.buttonDisabled),
           }}
           onClick={onNext}
