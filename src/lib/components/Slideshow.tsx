@@ -82,7 +82,15 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       onSlideChange,
     })
 
-    const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipe({
+    const {
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      handleMouseDown,
+      handleMouseMove,
+      handleMouseUp,
+      handleMouseLeave,
+    } = useSwipe({
       onSwipeLeft: next,
       onSwipeRight: prev,
       enabled: enableSwipe,
@@ -131,12 +139,20 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       )
     }
 
+    const onMouseLeave = useCallback(() => {
+      handleMouseLeave()
+      resume()
+    }, [handleMouseLeave, resume])
+
     return (
       <div
-        style={containerStyle}
+        style={{ ...containerStyle, cursor: enableSwipe ? 'grab' : undefined }}
         className={className}
         onMouseEnter={pause}
-        onMouseLeave={resume}
+        onMouseLeave={onMouseLeave}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}

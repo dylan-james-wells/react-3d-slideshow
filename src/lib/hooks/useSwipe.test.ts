@@ -7,6 +7,11 @@ const createTouchEvent = (clientX: number): React.TouchEvent => ({
   touches: [{ clientX }] as unknown as React.TouchList,
 } as React.TouchEvent)
 
+// Helper to create mock mouse events
+const createMouseEvent = (clientX: number): React.MouseEvent => ({
+  clientX,
+} as React.MouseEvent)
+
 describe('useSwipe', () => {
   describe('swipe detection', () => {
     it('calls onSwipeLeft when swiping left past threshold', () => {
@@ -190,6 +195,127 @@ describe('useSwipe', () => {
 
       expect(onSwipeLeft).toHaveBeenCalledTimes(1)
       expect(onSwipeRight).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('mouse drag detection', () => {
+    it('calls onSwipeLeft when dragging left past threshold', () => {
+      const onSwipeLeft = vi.fn()
+      const onSwipeRight = vi.fn()
+
+      const { result } = renderHook(() =>
+        useSwipe({
+          onSwipeLeft,
+          onSwipeRight,
+          threshold: 50,
+        })
+      )
+
+      act(() => {
+        result.current.handleMouseDown(createMouseEvent(200))
+        result.current.handleMouseMove(createMouseEvent(100))
+        result.current.handleMouseUp()
+      })
+
+      expect(onSwipeLeft).toHaveBeenCalledTimes(1)
+      expect(onSwipeRight).not.toHaveBeenCalled()
+    })
+
+    it('calls onSwipeRight when dragging right past threshold', () => {
+      const onSwipeLeft = vi.fn()
+      const onSwipeRight = vi.fn()
+
+      const { result } = renderHook(() =>
+        useSwipe({
+          onSwipeLeft,
+          onSwipeRight,
+          threshold: 50,
+        })
+      )
+
+      act(() => {
+        result.current.handleMouseDown(createMouseEvent(100))
+        result.current.handleMouseMove(createMouseEvent(200))
+        result.current.handleMouseUp()
+      })
+
+      expect(onSwipeRight).toHaveBeenCalledTimes(1)
+      expect(onSwipeLeft).not.toHaveBeenCalled()
+    })
+
+    it('does not trigger swipe below threshold', () => {
+      const onSwipeLeft = vi.fn()
+
+      const { result } = renderHook(() =>
+        useSwipe({
+          onSwipeLeft,
+          threshold: 50,
+        })
+      )
+
+      act(() => {
+        result.current.handleMouseDown(createMouseEvent(100))
+        result.current.handleMouseMove(createMouseEvent(130)) // Only 30px
+        result.current.handleMouseUp()
+      })
+
+      expect(onSwipeLeft).not.toHaveBeenCalled()
+    })
+
+    it('ignores mouse move when not dragging', () => {
+      const onSwipeLeft = vi.fn()
+
+      const { result } = renderHook(() =>
+        useSwipe({
+          onSwipeLeft,
+        })
+      )
+
+      act(() => {
+        // Move without mouseDown first
+        result.current.handleMouseMove(createMouseEvent(100))
+        result.current.handleMouseUp()
+      })
+
+      expect(onSwipeLeft).not.toHaveBeenCalled()
+    })
+
+    it('triggers swipe on mouse leave while dragging', () => {
+      const onSwipeLeft = vi.fn()
+
+      const { result } = renderHook(() =>
+        useSwipe({
+          onSwipeLeft,
+          threshold: 50,
+        })
+      )
+
+      act(() => {
+        result.current.handleMouseDown(createMouseEvent(200))
+        result.current.handleMouseMove(createMouseEvent(100))
+        result.current.handleMouseLeave()
+      })
+
+      expect(onSwipeLeft).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not track mouse when disabled', () => {
+      const onSwipeLeft = vi.fn()
+
+      const { result } = renderHook(() =>
+        useSwipe({
+          onSwipeLeft,
+          enabled: false,
+        })
+      )
+
+      act(() => {
+        result.current.handleMouseDown(createMouseEvent(200))
+        result.current.handleMouseMove(createMouseEvent(50))
+        result.current.handleMouseUp()
+      })
+
+      expect(onSwipeLeft).not.toHaveBeenCalled()
     })
   })
 })
