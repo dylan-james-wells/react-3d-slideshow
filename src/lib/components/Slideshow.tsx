@@ -54,6 +54,8 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       glitchGrain = defaultProps.glitchGrain,
       fullscreen = false,
       loadingSpinner,
+      prevButton,
+      nextButton,
     } = props
 
     const [isLoading, setIsLoading] = useState(true)
@@ -185,6 +187,8 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
             onPrev={prev}
             canGoNext={canGoNext}
             canGoPrev={canGoPrev}
+            prevButton={prevButton}
+            nextButton={nextButton}
           />
         )}
 

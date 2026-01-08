@@ -36,36 +36,54 @@ const styles: Record<string, React.CSSProperties> = {
   },
 }
 
+function DefaultPrevButton() {
+  return <>&#8249;</>
+}
+
+function DefaultNextButton() {
+  return <>&#8250;</>
+}
+
 export function Controls({
   onNext,
   onPrev,
   canGoNext,
   canGoPrev,
+  prevButton,
+  nextButton,
 }: ControlsProps) {
+  const showPrev = prevButton !== null
+  const showNext = nextButton !== null
+
   return (
     <div style={styles.container}>
-      <button
-        style={{
-          ...styles.button,
-          ...(canGoPrev ? {} : styles.buttonDisabled),
-        }}
-        onClick={onPrev}
-        disabled={!canGoPrev}
-        aria-label="Previous slide"
-      >
-        &#8249;
-      </button>
-      <button
-        style={{
-          ...styles.button,
-          ...(canGoNext ? {} : styles.buttonDisabled),
-        }}
-        onClick={onNext}
-        disabled={!canGoNext}
-        aria-label="Next slide"
-      >
-        &#8250;
-      </button>
+      {showPrev && (
+        <button
+          style={{
+            ...styles.button,
+            ...(canGoPrev ? {} : styles.buttonDisabled),
+          }}
+          onClick={onPrev}
+          disabled={!canGoPrev}
+          aria-label="Previous slide"
+        >
+          {prevButton ?? <DefaultPrevButton />}
+        </button>
+      )}
+      {!showPrev && <div />}
+      {showNext && (
+        <button
+          style={{
+            ...styles.button,
+            ...(canGoNext ? {} : styles.buttonDisabled),
+          }}
+          onClick={onNext}
+          disabled={!canGoNext}
+          aria-label="Next slide"
+        >
+          {nextButton ?? <DefaultNextButton />}
+        </button>
+      )}
     </div>
   )
 }

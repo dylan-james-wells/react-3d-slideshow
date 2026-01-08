@@ -43,6 +43,10 @@ export interface SlideshowProps {
   fullscreen?: boolean
   /** Custom loading spinner element. Set to null to disable, or provide a custom ReactElement */
   loadingSpinner?: ReactElement | null
+  /** Custom previous button element. Set to null to hide, or provide a custom ReactElement */
+  prevButton?: ReactElement | null
+  /** Custom next button element. Set to null to hide, or provide a custom ReactElement */
+  nextButton?: ReactElement | null
 }
 
 export interface SlideshowHandle {
@@ -66,6 +70,8 @@ export interface ControlsProps {
   onPrev: () => void
   canGoNext: boolean
   canGoPrev: boolean
+  prevButton?: ReactElement | null
+  nextButton?: ReactElement | null
 }
 
 export interface IndicatorsProps {
