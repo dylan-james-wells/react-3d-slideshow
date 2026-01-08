@@ -37,7 +37,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'rgba(255, 255, 255, 0.9)',
     color: '#333',
-    fontSize: 28,
+    fontSize: 18,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -65,11 +65,11 @@ const styles: Record<string, React.CSSProperties> = {
 }
 
 function DefaultPrevButton() {
-  return <span>&#9664;</span>
+  return <span style={{ paddingRight: 4 }}>&#9664;</span>
 }
 
 function DefaultNextButton() {
-  return <span>&#9654;</span>
+  return <span style={{ paddingLeft: 4 }}>&#9654;</span>
 }
 
 export function Controls({
