@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useState, useCallback } from 'react'
+import React, { forwardRef, useImperativeHandle, useMemo, useState, useCallback, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { SlideshowProps, SlideshowHandle } from '../types'
 import { useSlideshow, useSwipe, useKeyboard } from '../hooks'
@@ -6,6 +6,8 @@ import { Scene } from './Scene'
 import { Controls } from './Controls'
 import { Indicators } from './Indicators'
 import { LoadingSpinner } from './LoadingSpinner'
+import { FallbackSlideshow } from './FallbackSlideshow'
+import { isWebGLSupported } from '../utils/webgl'
 
 const defaultProps: Partial<SlideshowProps> = {
   style: 'cascade',
@@ -59,10 +61,22 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
       renderIndicator,
       ariaLabel = 'Image slideshow',
       getSlideAriaLabel,
+      fallback,
+      onWebGLUnsupported,
     } = props
 
+    const [webglAvailable, setWebglAvailable] = useState(true)
     const [isLoading, setIsLoading] = useState(true)
     const handleReady = useCallback(() => setIsLoading(false), [])
+
+    useEffect(() => {
+      const supported = isWebGLSupported()
+      setWebglAvailable(supported)
+      if (!supported) {
+        setIsLoading(false)
+        onWebGLUnsupported?.()
+      }
+    }, [onWebGLUnsupported])
 
     const defaultGetSlideAriaLabel = useCallback(
       (index: number, total: number) => `Slide ${index + 1} of ${total}`,
@@ -193,30 +207,41 @@ export const Slideshow = forwardRef<SlideshowHandle, SlideshowProps>(
           {slideAriaLabel(currentIndex, slides.length)}
         </div>
 
-        <Canvas
-          className="r3dss__canvas"
-          camera={{ position: [0, 0, 5], fov: 50 }}
-          dpr={[1, 2]}
-          style={{ touchAction: 'pan-y' }}
-          flat
-        >
-          <Scene
-            slides={slides}
-            currentIndex={currentIndex}
-            transitionDuration={transitionDuration}
-            style={style}
-            direction={direction}
-            cascadeMinTiles={cascadeMinTiles}
-            aspectRatio={aspectRatio}
-            glitchAberration={glitchAberration}
-            glitchScanlines={glitchScanlines}
-            glitchGrain={glitchGrain}
-            fullscreen={fullscreen}
-            onReady={handleReady}
-          />
-        </Canvas>
+        {webglAvailable ? (
+          <Canvas
+            className="r3dss__canvas"
+            camera={{ position: [0, 0, 5], fov: 50 }}
+            dpr={[1, 2]}
+            style={{ touchAction: 'pan-y' }}
+            flat
+          >
+            <Scene
+              slides={slides}
+              currentIndex={currentIndex}
+              transitionDuration={transitionDuration}
+              style={style}
+              direction={direction}
+              cascadeMinTiles={cascadeMinTiles}
+              aspectRatio={aspectRatio}
+              glitchAberration={glitchAberration}
+              glitchScanlines={glitchScanlines}
+              glitchGrain={glitchGrain}
+              fullscreen={fullscreen}
+              onReady={handleReady}
+            />
+          </Canvas>
+        ) : fallback !== null ? (
+          fallback ?? (
+            <FallbackSlideshow
+              slides={slides}
+              currentIndex={currentIndex}
+              transitionDuration={transitionDuration}
+              aspectRatio={aspectRatio}
+            />
+          )
+        ) : null}
 
-        {isLoading && loadingSpinner !== null && (
+        {isLoading && webglAvailable && loadingSpinner !== null && (
           <div
             className="r3dss__loader"
             role="status"

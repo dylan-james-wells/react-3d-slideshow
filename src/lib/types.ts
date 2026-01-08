@@ -53,6 +53,10 @@ export interface SlideshowProps {
   ariaLabel?: string
   /** Custom function to generate slide announcement text for screen readers */
   getSlideAriaLabel?: (index: number, total: number) => string
+  /** Custom fallback element when WebGL is not supported. Set to null to show nothing, or provide a custom ReactElement. If not provided, a simple crossfade slideshow is used. */
+  fallback?: ReactElement | null
+  /** Callback fired when WebGL is not supported */
+  onWebGLUnsupported?: () => void
 }
 
 export interface SlideshowHandle {
