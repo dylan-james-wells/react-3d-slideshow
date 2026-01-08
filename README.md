@@ -59,7 +59,7 @@ function App() {
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `autoPlay` | `boolean` | `false` | Automatically advance slides |
-| `autoPlayInterval` | `number` | `3000` | Time between auto-advances in milliseconds |
+| `autoPlayInterval` | `number` | `5000` | Time between auto-advances in milliseconds |
 | `pauseOnHover` | `boolean` | `true` | Pause autoplay when hovering over the slideshow |
 | `loop` | `boolean` | `true` | Loop back to first slide after reaching the end |
 
@@ -78,8 +78,18 @@ function App() {
 |------|------|---------|-------------|
 | `showControls` | `boolean` | `true` | Show prev/next navigation buttons |
 | `showIndicators` | `boolean` | `true` | Show slide indicator dots |
-| `enableSwipe` | `boolean` | `true` | Enable touch swipe navigation |
+| `enableSwipe` | `boolean` | `true` | Enable touch swipe and mouse drag navigation |
 | `enableKeyboard` | `boolean` | `true` | Enable arrow key navigation |
+
+### Custom UI Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `loadingSpinner` | `ReactElement \| null` | default spinner | Custom loading spinner. Set to `null` to hide |
+| `prevButton` | `ReactElement \| null` | default button | Custom previous button. Set to `null` to hide |
+| `nextButton` | `ReactElement \| null` | default button | Custom next button. Set to `null` to hide |
+| `renderIndicator` | `(index: number, isActive: boolean) => ReactElement` | - | Custom indicator renderer |
+| `focusRingStyles` | `FocusRingStyles` | - | Customize keyboard focus ring appearance |
 
 ### Glitch Effect Props
 
@@ -95,11 +105,131 @@ function App() {
 |------|------|---------|-------------|
 | `cascadeMinTiles` | `number` | `10` | Minimum number of tiles in the shorter dimension |
 
+### Accessibility Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `ariaLabel` | `string` | `'Image slideshow'` | Accessible label for the slideshow region |
+| `getSlideAriaLabel` | `(index: number, total: number) => string` | - | Custom function to generate slide announcements |
+| `focusRingStyles` | `FocusRingStyles` | - | Customize focus ring color, width, and offset |
+
+### WebGL Fallback Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `fallback` | `ReactElement \| null` | crossfade slideshow | Custom fallback when WebGL is unavailable. Set to `null` to show nothing |
+| `onWebGLUnsupported` | `() => void` | - | Callback fired when WebGL is not supported |
+
 ### Callbacks
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `onSlideChange` | `(index: number) => void` | Called when the active slide changes |
+| `onWebGLUnsupported` | `() => void` | Called when WebGL is not available |
+
+## Customization
+
+### Custom Navigation Buttons
+
+```tsx
+<Slideshow
+  slides={slides}
+  prevButton={<MyCustomPrevButton />}
+  nextButton={<MyCustomNextButton />}
+/>
+```
+
+Set to `null` to hide a button entirely:
+
+```tsx
+<Slideshow
+  slides={slides}
+  prevButton={null}  // Hide prev button
+  nextButton={<MyNextButton />}
+/>
+```
+
+### Custom Indicators
+
+```tsx
+<Slideshow
+  slides={slides}
+  renderIndicator={(index, isActive) => (
+    <div className={isActive ? 'dot active' : 'dot'} />
+  )}
+/>
+```
+
+### Custom Loading Spinner
+
+```tsx
+import { LoadingSpinner } from 'react-3d-slideshow'
+
+// Use built-in spinner with custom props
+<Slideshow
+  slides={slides}
+  loadingSpinner={<LoadingSpinner size={64} color="#ff0000" />}
+/>
+
+// Or use your own component
+<Slideshow
+  slides={slides}
+  loadingSpinner={<MyCustomSpinner />}
+/>
+
+// Or hide it entirely
+<Slideshow
+  slides={slides}
+  loadingSpinner={null}
+/>
+```
+
+### Focus Ring Styles
+
+Customize the keyboard focus ring for accessibility:
+
+```tsx
+<Slideshow
+  slides={slides}
+  focusRingStyles={{
+    color: '#00ff00',  // Focus ring color (default: '#fff')
+    width: 3,          // Ring width in pixels (default: 2)
+    offset: 4,         // Ring offset in pixels (default: 2)
+  }}
+/>
+```
+
+### WebGL Fallback
+
+When WebGL is not supported, the slideshow automatically falls back to a simple crossfade effect. You can customize this behavior:
+
+```tsx
+// Use default crossfade fallback (default behavior)
+<Slideshow slides={slides} />
+
+// Custom fallback component
+<Slideshow
+  slides={slides}
+  fallback={<MyCustomFallbackSlideshow slides={slides} />}
+  onWebGLUnsupported={() => console.log('WebGL not available')}
+/>
+
+// Show nothing when WebGL unavailable
+<Slideshow
+  slides={slides}
+  fallback={null}
+/>
+```
+
+You can also check WebGL support programmatically:
+
+```tsx
+import { isWebGLSupported } from 'react-3d-slideshow'
+
+if (isWebGLSupported()) {
+  // WebGL is available
+}
+```
 
 ## Ref API
 
@@ -130,6 +260,37 @@ function App() {
 | `next()` | Advance to the next slide |
 | `prev()` | Go to the previous slide |
 | `goTo(index: number)` | Jump to a specific slide by index |
+| `getCurrentIndex()` | Get the current slide index |
+
+## CSS Class Names
+
+The component uses BEM-style class names for styling customization:
+
+| Class | Description |
+|-------|-------------|
+| `.r3dss` | Root container |
+| `.r3dss--cascade` | Root with cascade style |
+| `.r3dss--cube` | Root with cube style |
+| `.r3dss--glitch` | Root with glitch style |
+| `.r3dss--empty` | Root when no slides provided |
+| `.r3dss__canvas` | Three.js canvas element |
+| `.r3dss__controls` | Navigation controls container |
+| `.r3dss__control` | Navigation button |
+| `.r3dss__control--prev` | Previous button |
+| `.r3dss__control--next` | Next button |
+| `.r3dss__control--disabled` | Disabled button state |
+| `.r3dss__control--hovered` | Hovered button state |
+| `.r3dss__control--custom` | Custom button element |
+| `.r3dss__indicators` | Indicator dots container |
+| `.r3dss__indicator` | Individual indicator dot |
+| `.r3dss__indicator--active` | Active indicator |
+| `.r3dss__indicator--custom` | Custom indicator element |
+| `.r3dss__loader` | Loading spinner container |
+| `.r3dss__spinner` | Default loading spinner |
+| `.r3dss__live-region` | Screen reader announcements |
+| `.r3dss__empty-message` | Empty state message |
+| `.r3dss__fallback` | WebGL fallback container |
+| `.r3dss__fallback-slide` | Fallback slide element |
 
 ## Slide Data
 
@@ -142,6 +303,24 @@ interface SlideData {
   content?: ReactNode      // Custom React content (not fully supported)
   backgroundColor?: string // Fallback background color
 }
+```
+
+## Types
+
+All TypeScript types are exported for convenience:
+
+```tsx
+import type {
+  SlideshowProps,
+  SlideshowHandle,
+  SlideData,
+  TransitionStyle,
+  ControlsProps,
+  IndicatorsProps,
+  FocusRingStyles,
+  LoadingSpinnerProps,
+  FallbackSlideshowProps,
+} from 'react-3d-slideshow'
 ```
 
 ## License
